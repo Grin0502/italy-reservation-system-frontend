@@ -1,4 +1,6 @@
 import HomePage from "./home";
-import Page1 from "./page1";
+import FloorPlanPage from "./floor-plan";
+import StatisticsPage from "./statistics";
+import SettingsPage from "./settings";
 
-export { HomePage, Page1 };
+export { HomePage, FloorPlanPage, StatisticsPage, SettingsPage };
