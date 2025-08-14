@@ -1,13 +1,13 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 
+import Logo from "../../components/public/Logo";
+
 const Header = () => {
     return (
         <Wrapper>
             <Container>
-                <LogoContainer>
-                    <Logo>Tavly</Logo>
-                </LogoContainer>
+                <Logo />
                 <Navbar>
                     <NavItem to="/">Home</NavItem>
                     <NavItem to="/about">About</NavItem>
@@ -35,15 +35,6 @@ const Container = styled.div`
     justify-content: space-between;
     align-items: center;
     backdrop-filter: blur(10px);
-`;
-const LogoContainer = styled.div`
-`;
-const Logo = styled.div`
-    font-size: 24px;
-    font-weight: bold;
-    color: transparent;
-    background-clip: text;
-    background-image: linear-gradient(to right, #22d3ee , #3b82f6);
 `;
 const Navbar = styled.div`
     display: flex;
