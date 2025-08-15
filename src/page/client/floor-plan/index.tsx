@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 
 const FloorPlanPage = () => {
   const [selectedZone, setSelectedZone] = useState('all');
@@ -19,9 +18,9 @@ const FloorPlanPage = () => {
     capacity: [2, 4, 6, 8][i % 4]
   }));
 
-  const getStatusColor = (status: string) => {
-    return status === 'available' ? '#10b981' : '#ef4444';
-  };
+  // const getStatusColor = (status: string) => {
+  //   return status === 'available' ? '#10b981' : '#ef4444';
+  // };
 
   return (
     <FloorPlanContainer>
