@@ -1,19 +1,16 @@
 import styled from "styled-components";
-import { Link } from "react-router-dom";
-
-import Logo from "../../components/public/Logo";
 
 const Header = () => {
     return (
         <Wrapper>
             <Container>
-                <Logo />
-                <Navbar>
-                    <NavItem to="/">Home</NavItem>
-                    <NavItem to="/about">About</NavItem>
-                    <NavItem to="/services">Services</NavItem>
-                    <NavItem to="/contact">Contact</NavItem>
-                </Navbar>
+                <HeaderTitle>Restaurant Management System</HeaderTitle>
+                <UserSection>
+                    <UserInfo>
+                        <UserName>Admin User</UserName>
+                        <UserRole>Manager</UserRole>
+                    </UserInfo>
+                </UserSection>
             </Container>
         </Wrapper>      
     );
@@ -22,8 +19,9 @@ const Header = () => {
 const Wrapper = styled.div`
     display: flex;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.9);
+    background-color: white;
     height: 64px;
+    border-bottom: 1px solid #e2e8f0;
 `;
 const Container = styled.div`
     max-width: 1536px;
@@ -34,18 +32,29 @@ const Container = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    backdrop-filter: blur(10px);
+    padding: 0 2rem;
 `;
-const Navbar = styled.div`
+const HeaderTitle = styled.h1`
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+`;
+const UserSection = styled.div`
     display: flex;
-    gap: 16px;
+    align-items: center;
+    gap: 1rem;
 `;
-const NavItem = styled(Link)`
-    color: rgb(209 213 219);
-    transition: color 0.3s;
-
-    &:hover {
-        color: rgb(255 255 255);
-    }
+const UserInfo = styled.div`
+    text-align: right;
+`;
+const UserName = styled.div`
+    font-weight: 500;
+    color: #1e293b;
+    font-size: 0.875rem;
+`;
+const UserRole = styled.div`
+    color: #64748b;
+    font-size: 0.75rem;
 `;
 export default Header;

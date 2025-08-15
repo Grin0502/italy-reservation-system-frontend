@@ -6,7 +6,6 @@ import {
   StatisticsPage,
   SettingsPage
 } from "../../page/client";
-import Dashboard from "../../page/client/Dashboard";
 
 const ClientView = () => {
   return (
@@ -14,7 +13,9 @@ const ClientView = () => {
       <Routes>
         <Route path="/" element={<ClientLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="floor-plan" element={<FloorPlanPage />} />
+          <Route path="statistics" element={<StatisticsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

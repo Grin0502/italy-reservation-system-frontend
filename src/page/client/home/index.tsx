@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 import { 
   AiOutlineCalendar, 
   AiOutlineUser, 
@@ -78,7 +79,7 @@ const HomePage = () => {
         <SectionCard>
           <SectionHeader>
             <h2>Today's Reservations</h2>
-            <ViewAllButton>View All</ViewAllButton>
+            <ViewAllButton as={Link} to="/statistics">View All</ViewAllButton>
           </SectionHeader>
           <ReservationsList>
             {todayReservations.map((reservation) => (
@@ -103,7 +104,7 @@ const HomePage = () => {
         <SectionCard>
           <SectionHeader>
             <h2>Floor Plan Overview</h2>
-            <ViewAllButton>View Full Plan</ViewAllButton>
+            <ViewAllButton as={Link} to="/floor-plan">View Full Plan</ViewAllButton>
           </SectionHeader>
           <FloorPlanPreview>
             <FloorPlanGrid>
@@ -261,6 +262,7 @@ const ViewAllButton = styled.button`
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
+  text-decoration: none;
   
   &:hover {
     text-decoration: underline;
