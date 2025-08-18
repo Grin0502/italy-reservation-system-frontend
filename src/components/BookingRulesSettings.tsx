@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import { useUser } from '../contexts/UserContext';
+import { formatTimeMargin } from '../utils/bookingUtils';
 
 const BookingRulesSettings: React.FC = () => {
   const { bookingRules, updateBookingRules } = useRestaurant();
@@ -29,6 +30,8 @@ const BookingRulesSettings: React.FC = () => {
   const handleInputChange = (field: keyof typeof bookingRules, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+
 
   return (
     <Container>
@@ -98,6 +101,30 @@ const BookingRulesSettings: React.FC = () => {
         </RuleCard>
 
         <RuleCard>
+          <RuleLabel>Booking Time Margin</RuleLabel>
+          {isEditing ? (
+            <TimeMarginInput>
+              <Input
+                type="number"
+                value={formData.bookingTimeMargin}
+                onChange={(e) => handleInputChange('bookingTimeMargin', parseInt(e.target.value))}
+                min="15"
+                max="240"
+                step="15"
+              />
+              <TimeUnit>minutes</TimeUnit>
+            </TimeMarginInput>
+          ) : (
+            <RuleValue>
+              {formatTimeMargin(bookingRules.bookingTimeMargin)}
+              <TimeMarginNote>
+                (Table remains unavailable after booking ends)
+              </TimeMarginNote>
+            </RuleValue>
+          )}
+        </RuleCard>
+
+        <RuleCard>
           <RuleLabel>Deposit Required</RuleLabel>
           {isEditing ? (
             <ToggleSwitch
@@ -126,6 +153,18 @@ const BookingRulesSettings: React.FC = () => {
           </RuleCard>
         )}
       </RulesGrid>
+
+      <InfoSection>
+        <InfoTitle>About Booking Time Margin</InfoTitle>
+        <InfoDescription>
+          The booking time margin is the period after a booking ends during which the table remains unavailable for new bookings. 
+          This allows time for table cleanup, preparation, and prevents overlapping reservations.
+        </InfoDescription>
+        <InfoExample>
+          <strong>Example:</strong> If a table is booked until 8:00 PM with a 90-minute margin, 
+          the next available booking slot would be 9:30 PM.
+        </InfoExample>
+      </InfoSection>
 
       {!canEdit && (
         <AccessNote>
@@ -217,6 +256,7 @@ const RulesGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
+  margin-bottom: 2rem;
 `;
 
 const RuleCard = styled.div`
@@ -241,6 +281,27 @@ const RuleValue = styled.div`
   min-height: 2.75rem;
   display: flex;
   align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+`;
+
+const TimeMarginNote = styled.div`
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+`;
+
+const TimeMarginInput = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const TimeUnit = styled.span`
+  color: #6b7280;
+  font-size: 0.875rem;
+  white-space: nowrap;
 `;
 
 const Input = styled.input`
@@ -285,6 +346,37 @@ const ToggleSwitch = styled.input.attrs({ type: 'checkbox' })`
   &:checked::before {
     transform: translateX(24px);
   }
+`;
+
+const InfoSection = styled.div`
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const InfoTitle = styled.h4`
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0369a1;
+  margin-bottom: 0.75rem;
+`;
+
+const InfoDescription = styled.p`
+  color: #0369a1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+`;
+
+const InfoExample = styled.div`
+  color: #0369a1;
+  font-size: 0.875rem;
+  background: rgba(186, 230, 253, 0.3);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid #0ea5e9;
 `;
 
 const AccessNote = styled.div`

@@ -26,6 +26,7 @@ export interface BookingRules {
   cancellationPolicy: number;
   depositRequired: boolean;
   depositAmount?: number;
+  bookingTimeMargin: number; // Time in minutes that a table remains unavailable after a booking
 }
 
 interface RestaurantContextType {
@@ -66,7 +67,8 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     advanceBookingLimit: 30,
     cancellationPolicy: 24,
     depositRequired: false,
-    depositAmount: 0
+    depositAmount: 0,
+    bookingTimeMargin: 90 // 90 minutes = 1.5 hours default margin
   });
 
   const updateRestaurantInfo = (updates: Partial<RestaurantInfo>) => {

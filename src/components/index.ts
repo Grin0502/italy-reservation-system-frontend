@@ -5,3 +5,4 @@ export { default as RoleSwitcher } from './RoleSwitcher';
 export { default as RestaurantInfoSettings } from './RestaurantInfoSettings';
 export { default as NotificationSettings } from './NotificationSettings';
 export { default as BookingRulesSettings } from './BookingRulesSettings';
+export { default as BookingDemo } from './BookingDemo';

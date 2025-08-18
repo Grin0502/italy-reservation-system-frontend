@@ -3,10 +3,11 @@ import { useState } from "react";
 import RestaurantInfoSettings from "../../../components/RestaurantInfoSettings";
 import NotificationSettings from "../../../components/NotificationSettings";
 import BookingRulesSettings from "../../../components/BookingRulesSettings";
+import BookingDemo from "../../../components/BookingDemo";
 import RoleSwitcher from "../../../components/RoleSwitcher";
 import { useUser } from "../../../contexts/UserContext";
 
-type TabType = 'restaurant' | 'notifications' | 'booking-rules';
+type TabType = 'restaurant' | 'notifications' | 'booking-rules' | 'booking-demo';
 
 const SettingsPage = () => {
   const { hasPermission } = useUser();
@@ -16,6 +17,7 @@ const SettingsPage = () => {
     { id: 'restaurant', label: 'Restaurant Details', icon: '🏪' },
     ...(hasPermission('manage_notifications') || hasPermission('view_notifications') ? [{ id: 'notifications', label: 'Notifications', icon: '🔔' }] : []),
     ...(hasPermission('manage_booking_rules') || hasPermission('view_booking_rules') ? [{ id: 'booking-rules', label: 'Booking Rules', icon: '📋' }] : []),
+    { id: 'booking-demo', label: 'Booking Demo', icon: '🕐' },
   ];
 
   const renderTabContent = () => {
@@ -26,6 +28,8 @@ const SettingsPage = () => {
         return <NotificationSettings />;
       case 'booking-rules':
         return <BookingRulesSettings />;
+      case 'booking-demo':
+        return <BookingDemo />;
       default:
         return <RestaurantInfoSettings />;
     }
