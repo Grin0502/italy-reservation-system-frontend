@@ -20,9 +20,9 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 const permissions = {
-  admin: ['manage_tables', 'manage_zones', 'view_statistics', 'edit_statistics', 'manage_users'],
-  manager: ['manage_tables', 'manage_zones', 'view_statistics', 'edit_statistics'],
-  staff: ['view_statistics']
+  admin: ['manage_tables', 'manage_zones', 'view_statistics', 'edit_statistics', 'manage_users', 'manage_restaurant_info', 'manage_notifications', 'manage_booking_rules'],
+  manager: ['manage_tables', 'manage_zones', 'view_statistics', 'edit_statistics', 'manage_restaurant_info', 'manage_notifications', 'manage_booking_rules'],
+  staff: ['view_statistics', 'view_restaurant_info', 'view_notifications', 'view_booking_rules']
 };
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
