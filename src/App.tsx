@@ -1,9 +1,15 @@
 import './App.css';
 import ClientView from './view/client';
+import { UserProvider } from './contexts/UserContext';
+import { TableZoneProvider } from './contexts/TableZoneContext';
 
 function App() {
   return (
-    <ClientView />
+    <UserProvider>
+      <TableZoneProvider>
+        <ClientView />
+      </TableZoneProvider>
+    </UserProvider>
   );
 }
 

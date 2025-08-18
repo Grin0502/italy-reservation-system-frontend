@@ -1,139 +1,59 @@
+import React, { useState } from "react";
 import styled from "styled-components";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
+import DynamicStatistics from "../../../components/DynamicStatistics";
+import TableManagement from "../../../components/TableManagement";
+import ZoneManagement from "../../../components/ZoneManagement";
+import RoleSwitcher from "../../../components/RoleSwitcher";
+import { useUser } from "../../../contexts/UserContext";
+
+type TabType = 'statistics' | 'tables' | 'zones';
 
 const StatisticsPage = () => {
-  // Mock data for charts
-  const occupancyData = [
-    { day: 'Mon', occupancy: 65, bookings: 45 },
-    { day: 'Tue', occupancy: 72, bookings: 52 },
-    { day: 'Wed', occupancy: 68, bookings: 48 },
-    { day: 'Thu', occupancy: 85, bookings: 62 },
-    { day: 'Fri', occupancy: 92, bookings: 78 },
-    { day: 'Sat', occupancy: 95, bookings: 85 },
-    { day: 'Sun', occupancy: 78, bookings: 65 },
+  const { hasPermission } = useUser();
+  const [activeTab, setActiveTab] = useState<TabType>('statistics');
+
+  const tabs = [
+    { id: 'statistics', label: 'Statistics', icon: '📊' },
+    ...(hasPermission('manage_tables') ? [{ id: 'tables', label: 'Table Management', icon: '🪑' }] : []),
+    ...(hasPermission('manage_zones') ? [{ id: 'zones', label: 'Zone Management', icon: '🗺️' }] : []),
   ];
 
-  const bookingSources = [
-    { name: 'Phone', value: 45, color: '#06b6d4' },
-    { name: 'Website', value: 30, color: '#3b82f6' },
-    { name: 'Walk-in', value: 15, color: '#10b981' },
-    { name: 'App', value: 10, color: '#f59e0b' },
-  ];
-
-  const monthlyTrends = [
-    { month: 'Jan', revenue: 45000, bookings: 320 },
-    { month: 'Feb', revenue: 48000, bookings: 340 },
-    { month: 'Mar', revenue: 52000, bookings: 380 },
-    { month: 'Apr', revenue: 49000, bookings: 350 },
-    { month: 'May', revenue: 55000, bookings: 400 },
-    { month: 'Jun', revenue: 58000, bookings: 420 },
-  ];
-
-  const quickStats = [
-    { label: 'Total Revenue', value: '€45,230', change: '+12%', positive: true },
-    { label: 'Avg. Table Turn', value: '2.3h', change: '-5%', positive: false },
-    { label: 'No-show Rate', value: '8.5%', change: '-2%', positive: true },
-    { label: 'Customer Rating', value: '4.6/5', change: '+0.2', positive: true },
-  ];
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'statistics':
+        return <DynamicStatistics />;
+      case 'tables':
+        return <TableManagement />;
+      case 'zones':
+        return <ZoneManagement />;
+      default:
+        return <DynamicStatistics />;
+    }
+  };
 
   return (
     <StatisticsContainer>
-      <PageHeader>
-        <h1>Statistics & Analytics</h1>
-        <p>Key performance metrics and insights</p>
-      </PageHeader>
-
-      {/* Quick Stats */}
-      <StatsGrid>
-        {quickStats.map((stat, index) => (
-          <StatCard key={index}>
-            <StatLabel>{stat.label}</StatLabel>
-            <StatValue>{stat.value}</StatValue>
-            <StatChange positive={stat.positive}>
-              {stat.change}
-            </StatChange>
-          </StatCard>
-        ))}
-      </StatsGrid>
-
-      <ChartsGrid>
-        {/* Weekly Occupancy */}
-        <ChartCard>
-          <ChartHeader>
-            <h3>Weekly Occupancy & Bookings</h3>
-            <p>Last 7 days performance</p>
-          </ChartHeader>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={occupancyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="occupancy" fill="#06b6d4" name="Occupancy %" />
-              <Bar dataKey="bookings" fill="#3b82f6" name="Bookings" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Booking Sources */}
-        <ChartCard>
-          <ChartHeader>
-            <h3>Booking Sources</h3>
-            <p>Distribution by channel</p>
-          </ChartHeader>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={bookingSources}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${((percent ? percent : 0) * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {bookingSources.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Monthly Trends */}
-        <ChartCard fullWidth>
-          <ChartHeader>
-            <h3>Monthly Revenue & Bookings Trend</h3>
-            <p>6-month performance overview</p>
-          </ChartHeader>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyTrends}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#06b6d4" name="Revenue (€)" />
-              <Line yAxisId="right" type="monotone" dataKey="bookings" stroke="#10b981" name="Bookings" />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </ChartsGrid>
+      {/* Development Role Switcher */}
+      <RoleSwitcher />
+      
+      {tabs.length > 1 && (
+        <TabNavigation>
+          {tabs.map((tab) => (
+            <TabButton
+              key={tab.id}
+              isActive={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id as TabType)}
+            >
+              <TabIcon>{tab.icon}</TabIcon>
+              {tab.label}
+            </TabButton>
+          ))}
+        </TabNavigation>
+      )}
+      
+      <TabContent>
+        {renderTabContent()}
+      </TabContent>
     </StatisticsContainer>
   );
 };
@@ -143,87 +63,40 @@ const StatisticsContainer = styled.div`
   margin: 0 auto;
 `;
 
-const PageHeader = styled.div`
+const TabNavigation = styled.div`
+  display: flex;
+  gap: 0.5rem;
   margin-bottom: 2rem;
-  
-  h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-  }
-  
-  p {
-    color: #64748b;
-    font-size: 1.1rem;
-  }
-`;
-
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const StatCard = styled.div`
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;
 
-const StatLabel = styled.div`
-  color: #64748b;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
-`;
-
-const StatChange = styled.div<{ positive: boolean }>`
-  font-size: 0.875rem;
-  color: ${props => props.positive ? '#10b981' : '#ef4444'};
+const TabButton = styled.button<{ isActive: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: ${props => props.isActive ? '#06b6d4' : 'transparent'};
+  color: ${props => props.isActive ? 'white' : '#64748b'};
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
   font-weight: 500;
-`;
-
-const ChartsGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
   
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
+  &:hover {
+    background: ${props => props.isActive ? '#0891b2' : '#f1f5f9'};
   }
 `;
 
-const ChartCard = styled.div<{ fullWidth?: boolean }>`
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  grid-column: ${props => props.fullWidth ? '1 / -1' : 'auto'};
+const TabIcon = styled.span`
+  font-size: 1.125rem;
 `;
 
-const ChartHeader = styled.div`
-  margin-bottom: 1.5rem;
-  
-  h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-  }
-  
-  p {
-    color: #64748b;
-    font-size: 0.875rem;
-  }
+const TabContent = styled.div`
+  min-height: 400px;
 `;
 
 export default StatisticsPage;

@@ -1,67 +1,40 @@
 import styled from "styled-components";
 import { useState } from "react";
+import { useTableZone } from "../../../contexts/TableZoneContext";
 
 const FloorPlanPage = () => {
+  const { tables, zones } = useTableZone();
   const [selectedZone, setSelectedZone] = useState('all');
 
-  const zones = [
-    { id: 'all', name: 'All Zones', count: 16 },
-    { id: 'a', name: 'Zone A - Window', count: 6 },
-    { id: 'b', name: 'Zone B - Center', count: 6 },
-    { id: 'c', name: 'Zone C - Garden', count: 4 },
-  ];
-
-  // Define tables for each zone
-  const allTables = [
-    // Zone A - Window tables (A1-A6)
-    { id: 1, number: 'A1', zone: 'a', status: 'available', capacity: 2, position: { row: 1, col: 1 } },
-    { id: 2, number: 'A2', zone: 'a', status: 'occupied', capacity: 4, position: { row: 1, col: 2 } },
-    { id: 3, number: 'A3', zone: 'a', status: 'available', capacity: 2, position: { row: 1, col: 3 } },
-    { id: 4, number: 'A4', zone: 'a', status: 'available', capacity: 6, position: { row: 2, col: 1 } },
-    { id: 5, number: 'A5', zone: 'a', status: 'occupied', capacity: 4, position: { row: 2, col: 2 } },
-    { id: 6, number: 'A6', zone: 'a', status: 'available', capacity: 2, position: { row: 2, col: 3 } },
-    
-    // Zone B - Center tables (B1-B6)
-    { id: 7, number: 'B1', zone: 'b', status: 'available', capacity: 8, position: { row: 1, col: 1 } },
-    { id: 8, number: 'B2', zone: 'b', status: 'occupied', capacity: 6, position: { row: 1, col: 2 } },
-    { id: 9, number: 'B3', zone: 'b', status: 'available', capacity: 4, position: { row: 1, col: 3 } },
-    { id: 10, number: 'B4', zone: 'b', status: 'available', capacity: 2, position: { row: 2, col: 1 } },
-    { id: 11, number: 'B5', zone: 'b', status: 'occupied', capacity: 4, position: { row: 2, col: 2 } },
-    { id: 12, number: 'B6', zone: 'b', status: 'available', capacity: 6, position: { row: 2, col: 3 } },
-    
-    // Zone C - Garden tables (C1-C4)
-    { id: 13, number: 'C1', zone: 'c', status: 'available', capacity: 4, position: { row: 1, col: 1 } },
-    { id: 14, number: 'C2', zone: 'c', status: 'occupied', capacity: 6, position: { row: 1, col: 2 } },
-    { id: 15, number: 'C3', zone: 'c', status: 'available', capacity: 2, position: { row: 2, col: 1 } },
-    { id: 16, number: 'C4', zone: 'c', status: 'available', capacity: 4, position: { row: 2, col: 2 } },
+  // Create zones array with "All Zones" option
+  const allZones = [
+    { id: 'all', name: 'All Zones', count: tables.length },
+    ...zones.map((zone: any) => ({
+      id: zone.id,
+      name: zone.name,
+      count: tables.filter((table: any) => table.zoneId === zone.id).length
+    }))
   ];
 
   // Filter tables based on selected zone
-  const getFilteredTables = () => {
-    if (selectedZone === 'all') {
-      return allTables;
-    }
-    return allTables.filter(table => table.zone === selectedZone);
-  };
+  const filteredTables = selectedZone === 'all' 
+    ? tables 
+    : tables.filter((table: any) => table.zoneId === selectedZone);
 
-  const filteredTables = getFilteredTables();
+  // const getStatusColor = (status: string) => {
+  //   switch (status) {
+  //     case 'available': return '#10b981';
+  //     case 'occupied': return '#ef4444';
+  //     case 'reserved': return '#f59e0b';
+  //     case 'maintenance': return '#6b7280';
+  //     default: return '#6b7280';
+  //   }
+  // };
 
-  // Get grid layout based on selected zone
-  const getGridLayout = () => {
-    switch (selectedZone) {
-      case 'a':
-        return 'repeat(3, 1fr)'; // 3 columns for Zone A
-      case 'b':
-        return 'repeat(3, 1fr)'; // 3 columns for Zone B
-      case 'c':
-        return 'repeat(2, 1fr)'; // 2 columns for Zone C
-      default:
-        return 'repeat(4, 1fr)'; // 4 columns for All Zones
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    return status === 'available' ? '#10b981' : '#ef4444';
+  const getZoneColor = (zoneId: string) => {
+    if (zoneId === 'all') return '#06b6d4';
+    const zone = zones.find((z: any) => z.id === zoneId);
+    return zone?.color || '#6b7280';
   };
 
   return (
@@ -73,11 +46,12 @@ const FloorPlanPage = () => {
 
       <Controls>
         <ZoneFilter>
-          {zones.map(zone => (
+          {allZones.map((zone: any) => (
             <ZoneButton
               key={zone.id}
               isActive={selectedZone === zone.id}
               onClick={() => setSelectedZone(zone.id)}
+              zoneColor={getZoneColor(zone.id)}
             >
               {zone.name} ({zone.count})
             </ZoneButton>
@@ -87,25 +61,34 @@ const FloorPlanPage = () => {
 
       <FloorPlanSection>
         <FloorPlanContent>
-          <ZoneHeader>
-            <h2>{zones.find(z => z.id === selectedZone)?.name}</h2>
-            <p>{filteredTables.length} tables • {filteredTables.filter(t => t.status === 'available').length} available</p>
-          </ZoneHeader>
-          
-          <FloorPlanGrid gridLayout={getGridLayout()}>
-            {filteredTables.map(table => (
-              <TableElement
-                key={table.id}
-                status={table.status}
-              >
-                <TableNumber>{table.number}</TableNumber>
-                <TableCapacity>{table.capacity} seats</TableCapacity>
-                <TableStatus status={table.status}>
-                  {table.status === 'available' ? 'Available' : 'Occupied'}
-                </TableStatus>
-              </TableElement>
-            ))}
-          </FloorPlanGrid>
+          {filteredTables.length > 0 ? (
+            <FloorPlanGrid>
+              {filteredTables.map((table: any) => {
+                const zone = zones.find((z: any) => z.id === table.zoneId);
+                return (
+                  <TableElement
+                    key={table.id}
+                    status={table.status}
+                    zoneColor={zone?.color || '#6b7280'}
+                  >
+                    <TableNumber>{table.number}</TableNumber>
+                    <TableCapacity>{table.capacity} seats</TableCapacity>
+                    <TableZone>{zone?.name}</TableZone>
+                  </TableElement>
+                );
+              })}
+            </FloorPlanGrid>
+          ) : (
+            <EmptyState>
+              <EmptyIcon>🪑</EmptyIcon>
+              <EmptyTitle>No tables found</EmptyTitle>
+              <EmptyDescription>
+                {selectedZone === 'all' 
+                  ? 'No tables are currently configured.' 
+                  : 'No tables are assigned to this zone.'}
+              </EmptyDescription>
+            </EmptyState>
+          )}
         </FloorPlanContent>
 
         <FloorPlanLegend>
@@ -119,23 +102,27 @@ const FloorPlanPage = () => {
               <LegendDot color="#ef4444" />
               <span>Occupied</span>
             </LegendItem>
+            <LegendItem>
+              <LegendDot color="#f59e0b" />
+              <span>Reserved</span>
+            </LegendItem>
+            <LegendItem>
+              <LegendDot color="#6b7280" />
+              <span>Maintenance</span>
+            </LegendItem>
           </LegendGrid>
           
-          <LegendTitle style={{ marginTop: '2rem' }}>Zone Information</LegendTitle>
-          <ZoneInfo>
-            <ZoneInfoItem>
-              <ZoneLabel>Zone A - Window:</ZoneLabel>
-              <ZoneDescription>Window-side tables with natural light</ZoneDescription>
-            </ZoneInfoItem>
-            <ZoneInfoItem>
-              <ZoneLabel>Zone B - Center:</ZoneLabel>
-              <ZoneDescription>Central area with larger tables</ZoneDescription>
-            </ZoneInfoItem>
-            <ZoneInfoItem>
-              <ZoneLabel>Zone C - Garden:</ZoneLabel>
-              <ZoneDescription>Outdoor garden seating area</ZoneDescription>
-            </ZoneInfoItem>
-          </ZoneInfo>
+          <LegendDivider />
+          
+          <LegendTitle>Zone Colors</LegendTitle>
+          <LegendGrid>
+            {zones.map((zone: any) => (
+              <LegendItem key={zone.id}>
+                <LegendDot color={zone.color} />
+                <span>{zone.name}</span>
+              </LegendItem>
+            ))}
+          </LegendGrid>
         </FloorPlanLegend>
       </FloorPlanSection>
     </FloorPlanContainer>
@@ -173,18 +160,20 @@ const ZoneFilter = styled.div`
   flex-wrap: wrap;
 `;
 
-const ZoneButton = styled.button<{ isActive: boolean }>`
+const ZoneButton = styled.button<{ isActive: boolean; zoneColor: string }>`
   padding: 0.5rem 1rem;
-  border: 1px solid ${props => props.isActive ? '#06b6d4' : '#e2e8f0'};
-  background: ${props => props.isActive ? '#06b6d4' : 'white'};
+  border: 2px solid ${props => props.isActive ? props.zoneColor : '#e2e8f0'};
+  background: ${props => props.isActive ? props.zoneColor : 'white'};
   color: ${props => props.isActive ? 'white' : '#64748b'};
   border-radius: 8px;
   font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    background: ${props => props.isActive ? '#0891b2' : '#f8fafc'};
+    background: ${props => props.isActive ? props.zoneColor : '#f8fafc'};
+    border-color: ${props => props.zoneColor};
   }
 `;
 
@@ -203,38 +192,37 @@ const FloorPlanContent = styled.div`
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-height: 400px;
 `;
 
-const ZoneHeader = styled.div`
-  margin-bottom: 2rem;
-  text-align: center;
-  
-  h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-  }
-  
-  p {
-    color: #64748b;
-    font-size: 1rem;
-  }
-`;
-
-const FloorPlanGrid = styled.div<{ gridLayout: string }>`
+const FloorPlanGrid = styled.div`
   display: grid;
-  grid-template-columns: ${props => props.gridLayout};
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
   padding: 1rem;
-  justify-items: center;
 `;
 
-const TableElement = styled.div<{ status: string }>`
-  width: 120px;
-  height: 120px;
-  background: ${props => props.status === 'available' ? '#dcfce7' : '#fef2f2'};
-  border: 3px solid ${props => props.status === 'available' ? '#bbf7d0' : '#fecaca'};
+const TableElement = styled.div<{ status: string; zoneColor: string }>`
+  width: 100%;
+  min-height: 120px;
+  background: ${props => {
+    switch (props.status) {
+      case 'available': return '#dcfce7';
+      case 'occupied': return '#fef2f2';
+      case 'reserved': return '#fef3c7';
+      case 'maintenance': return '#f3f4f6';
+      default: return '#f3f4f6';
+    }
+  }};
+  border: 3px solid ${props => {
+    switch (props.status) {
+      case 'available': return '#bbf7d0';
+      case 'occupied': return '#fecaca';
+      case 'reserved': return '#fed7aa';
+      case 'maintenance': return '#d1d5db';
+      default: return '#d1d5db';
+    }
+  }};
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -242,17 +230,27 @@ const TableElement = styled.div<{ status: string }>`
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: center;
-  padding: 0.5rem;
+  position: relative;
   
   &:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    width: 12px;
+    height: 12px;
+    background: ${props => props.zoneColor};
+    border-radius: 50%;
+  }
 `;
 
 const TableNumber = styled.div`
-  font-weight: 700;
+  font-weight: 600;
   color: #1e293b;
   font-size: 1rem;
   margin-bottom: 0.25rem;
@@ -264,10 +262,37 @@ const TableCapacity = styled.div`
   margin-bottom: 0.25rem;
 `;
 
-const TableStatus = styled.div<{ status: string }>`
-  font-size: 0.7rem;
-  color: ${props => props.status === 'available' ? '#10b981' : '#ef4444'};
-  font-weight: 500;
+const TableZone = styled.div`
+  font-size: 0.625rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+`;
+
+const EmptyIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 1rem;
+`;
+
+const EmptyTitle = styled.h3`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+`;
+
+const EmptyDescription = styled.p`
+  color: #64748b;
+  font-size: 0.875rem;
 `;
 
 const FloorPlanLegend = styled.div`
@@ -289,7 +314,7 @@ const LegendGrid = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 `;
 
 const LegendItem = styled.div`
@@ -307,29 +332,10 @@ const LegendDot = styled.div<{ color: string }>`
   background: ${props => props.color};
 `;
 
-const ZoneInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const ZoneInfoItem = styled.div`
-  padding: 0.75rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border-left: 3px solid #06b6d4;
-`;
-
-const ZoneLabel = styled.div`
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-`;
-
-const ZoneDescription = styled.div`
-  color: #64748b;
-  font-size: 0.8rem;
+const LegendDivider = styled.div`
+  height: 1px;
+  background: #e5e7eb;
+  margin: 1.5rem 0;
 `;
 
 export default FloorPlanPage;

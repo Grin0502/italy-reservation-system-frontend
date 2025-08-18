@@ -1,0 +1,458 @@
+import React, { useState } from 'react';
+import styled from 'styled-components';
+
+import type { Table } from '../contexts/TableZoneContext';
+
+import { useTableZone } from '../contexts/TableZoneContext';
+import { useUser } from '../contexts/UserContext';
+
+interface TableFormData {
+  number: string;
+  zoneId: string;
+  capacity: number;
+  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
+}
+
+const TableManagement: React.FC = () => {
+  const { tables, zones, addTable, removeTable, updateTable } = useTableZone();
+  const { hasPermission } = useUser();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingTable, setEditingTable] = useState<Table | null>(null);
+  const [formData, setFormData] = useState<TableFormData>({
+    number: '',
+    zoneId: '',
+    capacity: 2,
+    status: 'available'
+  });
+
+  if (!hasPermission('manage_tables')) {
+    return (
+      <AccessDenied>
+        <h3>Access Denied</h3>
+        <p>You don't have permission to manage tables.</p>
+      </AccessDenied>
+    );
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingTable) {
+      updateTable(editingTable.id, formData);
+      setEditingTable(null);
+    } else {
+      addTable(formData);
+    }
+    setFormData({ number: '', zoneId: '', capacity: 2, status: 'available' });
+    setShowAddForm(false);
+  };
+
+  const handleEdit = (table: Table) => {
+    setEditingTable(table);
+    setFormData({
+      number: table.number,
+      zoneId: table.zoneId,
+      capacity: table.capacity,
+      status: table.status
+    });
+  };
+
+  const handleCancel = () => {
+    setEditingTable(null);
+    setShowAddForm(false);
+    setFormData({ number: '', zoneId: '', capacity: 2, status: 'available' });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available': return '#10b981';
+      case 'occupied': return '#ef4444';
+      case 'reserved': return '#f59e0b';
+      case 'maintenance': return '#6b7280';
+      default: return '#6b7280';
+    }
+  };
+
+  return (
+    <Container>
+      <Header>
+        <h3>Table Management</h3>
+        <AddButton onClick={() => setShowAddForm(true)}>
+          + Add Table
+        </AddButton>
+      </Header>
+
+      {(showAddForm || editingTable) && (
+        <FormOverlay>
+          <FormCard>
+            <FormHeader>
+              <h4>{editingTable ? 'Edit Table' : 'Add New Table'}</h4>
+              <CloseButton onClick={handleCancel}>×</CloseButton>
+            </FormHeader>
+            <Form onSubmit={handleSubmit}>
+              <FormGroup>
+                <Label>Table Number</Label>
+                <Input
+                  type="text"
+                  value={formData.number}
+                  onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+                  placeholder="e.g., A1, B2"
+                  required
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <Label>Zone</Label>
+                <Select
+                  value={formData.zoneId}
+                  onChange={(e) => setFormData({ ...formData, zoneId: e.target.value })}
+                  required
+                >
+                  <option value="">Select a zone</option>
+                  {zones.map(zone => (
+                    <option key={zone.id} value={zone.id}>
+                      {zone.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+              
+              <FormGroup>
+                <Label>Capacity</Label>
+                <Select
+                  value={formData.capacity}
+                  onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                  required
+                >
+                  <option value={2}>2 seats</option>
+                  <option value={4}>4 seats</option>
+                  <option value={6}>6 seats</option>
+                  <option value={8}>8 seats</option>
+                  <option value={10}>10 seats</option>
+                </Select>
+              </FormGroup>
+              
+              <FormGroup>
+                <Label>Status</Label>
+                <Select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  required
+                >
+                  <option value="available">Available</option>
+                  <option value="occupied">Occupied</option>
+                  <option value="reserved">Reserved</option>
+                  <option value="maintenance">Maintenance</option>
+                </Select>
+              </FormGroup>
+              
+              <ButtonGroup>
+                <CancelButton type="button" onClick={handleCancel}>
+                  Cancel
+                </CancelButton>
+                <SubmitButton type="submit">
+                  {editingTable ? 'Update' : 'Add'} Table
+                </SubmitButton>
+              </ButtonGroup>
+            </Form>
+          </FormCard>
+        </FormOverlay>
+      )}
+
+      <TableGrid>
+        {tables.map(table => {
+          const zone = zones.find(z => z.id === table.zoneId);
+          return (
+            <TableCard key={table.id}>
+              <TableHeader>
+                <TableNumber>{table.number}</TableNumber>
+                <StatusBadge color={getStatusColor(table.status)}>
+                  {table.status}
+                </StatusBadge>
+              </TableHeader>
+              <TableInfo>
+                <InfoItem>
+                  <Label>Zone:</Label>
+                  <span>{zone?.name}</span>
+                </InfoItem>
+                <InfoItem>
+                  <Label>Capacity:</Label>
+                  <span>{table.capacity} seats</span>
+                </InfoItem>
+              </TableInfo>
+              <TableActions>
+                <EditButton onClick={() => handleEdit(table)}>
+                  Edit
+                </EditButton>
+                <DeleteButton onClick={() => removeTable(table.id)}>
+                  Delete
+                </DeleteButton>
+              </TableActions>
+            </TableCard>
+          );
+        })}
+      </TableGrid>
+    </Container>
+  );
+};
+
+const Container = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+  }
+`;
+
+const AddButton = styled.button`
+  background: #06b6d4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background: #0891b2;
+  }
+`;
+
+const FormOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const FormCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+`;
+
+const FormHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  
+  h4 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+  
+  &:hover {
+    color: #1e293b;
+  }
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+`;
+
+const Input = styled.input`
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  }
+`;
+
+const Select = styled.select`
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: white;
+  
+  &:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const CancelButton = styled.button`
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  
+  &:hover {
+    background: #e5e7eb;
+  }
+`;
+
+const SubmitButton = styled.button`
+  background: #06b6d4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  
+  &:hover {
+    background: #0891b2;
+  }
+`;
+
+const TableGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+`;
+
+const TableCard = styled.div`
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f9fafb;
+`;
+
+const TableHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+`;
+
+const TableNumber = styled.div`
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #1e293b;
+`;
+
+const StatusBadge = styled.div<{ color: string }>`
+  background: ${props => props.color};
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+`;
+
+const TableInfo = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const InfoItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  
+  span {
+    color: #6b7280;
+  }
+`;
+
+const TableActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const EditButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  flex: 1;
+  
+  &:hover {
+    background: #2563eb;
+  }
+`;
+
+const DeleteButton = styled.button`
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  flex: 1;
+  
+  &:hover {
+    background: #dc2626;
+  }
+`;
+
+const AccessDenied = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  
+  h3 {
+    margin-bottom: 0.5rem;
+  }
+`;
+
+export default TableManagement;
