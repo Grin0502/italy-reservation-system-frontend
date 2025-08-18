@@ -4,7 +4,8 @@ import {
   HomePage,
   FloorPlanPage,
   StatisticsPage,
-  SettingsPage
+  SettingsPage,
+  BookingDemoPage
 } from "../../page/client";
 
 const ClientView = () => {
@@ -16,6 +17,7 @@ const ClientView = () => {
           <Route path="floor-plan" element={<FloorPlanPage />} />
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="booking-demo" element={<BookingDemoPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
