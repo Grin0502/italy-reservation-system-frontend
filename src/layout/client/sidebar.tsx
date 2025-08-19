@@ -8,18 +8,27 @@ import {
   AiOutlineClockCircle,
   AiOutlineAppstore
 } from "react-icons/ai";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
   const navItems = [
-    { path: "/", label: "Home", icon: AiOutlineHome },
-    { path: "/floor-plan", label: "Table Management", icon: AiOutlineLayout },
-    { path: "/zone-management", label: "Zone Management", icon: AiOutlineAppstore },
-    { path: "/booking-demo", label: "Booking Demo", icon: AiOutlineClockCircle },
-    { path: "/statistics", label: "Statistics", icon: AiOutlineBarChart },
-    { path: "/settings", label: "Settings", icon: AiOutlineSetting },
+    { path: "/", label: "Home", icon: AiOutlineHome, permission: null }, // Always visible
+    { path: "/floor-plan", label: "Table Management", icon: AiOutlineLayout, permission: "manage_tables" },
+    { path: "/zone-management", label: "Zone Management", icon: AiOutlineAppstore, permission: "manage_zones" },
+    { path: "/booking-demo", label: "Booking Demo", icon: AiOutlineClockCircle, permission: null }, // Always visible
+    { path: "/statistics", label: "Statistics", icon: AiOutlineBarChart, permission: "view_statistics" },
+    { path: "/settings", label: "Settings", icon: AiOutlineSetting, permission: "manage_restaurant_info" },
   ];
+
+  // Filter navigation items based on user permissions
+  const filteredNavItems = navItems.filter(item => {
+    if (!item.permission) return true; // Always show items without permission requirement
+    if (!user || !user.permissions) return false;
+    return user.permissions.includes(item.permission);
+  });
 
   return (
     <SidebarContainer>
@@ -29,7 +38,7 @@ const Sidebar = () => {
         </LogoSection>
         
         <NavSection>
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = location.pathname === item.path;
             

@@ -47,7 +47,6 @@ The statistics page has been enhanced with dynamic functionality that allows man
 - `DynamicStatistics`: Main statistics dashboard with real-time data
 - `TableManagement`: Interface for managing tables
 - `ZoneManagement`: Interface for managing zones
-- `RoleSwitcher`: Development tool for testing different user roles
 
 ### Data Flow
 1. User context provides role-based permissions

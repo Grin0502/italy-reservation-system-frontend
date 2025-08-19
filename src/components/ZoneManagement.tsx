@@ -37,14 +37,7 @@ const ZoneManagement: React.FC = () => {
     status: 'available'
   });
 
-  if (!hasPermission('manage_zones')) {
-    return (
-      <AccessDenied>
-        <h3>Access Denied</h3>
-        <p>You don't have permission to manage zones.</p>
-      </AccessDenied>
-    );
-  }
+  const canManageZones = hasPermission('manage_zones');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,9 +154,11 @@ const ZoneManagement: React.FC = () => {
     <Container>
       <Header>
         <h3>Zone Management</h3>
-        <AddButton onClick={() => setShowAddForm(true)}>
-          + Add Zone
-        </AddButton>
+        {canManageZones && (
+          <AddButton onClick={() => setShowAddForm(true)}>
+            + Add Zone
+          </AddButton>
+        )}
       </Header>
 
       {error && (
@@ -172,7 +167,7 @@ const ZoneManagement: React.FC = () => {
         </ErrorMessage>
       )}
 
-      {(showAddForm || editingZone) && (
+             {canManageZones && (showAddForm || editingZone) && (
         <FormOverlay>
           <FormCard>
             <FormHeader>
@@ -223,7 +218,7 @@ const ZoneManagement: React.FC = () => {
         </FormOverlay>
       )}
 
-      {showAddTableForm && (
+             {canManageZones && showAddTableForm && (
         <FormOverlay>
           <FormCard>
             <FormHeader>
@@ -285,7 +280,7 @@ const ZoneManagement: React.FC = () => {
       )}
 
       {/* Unassigned Tables Section */}
-      {getUnassignedTables().length > 0 && (
+      {canManageZones && getUnassignedTables().length > 0 && (
         <UnassignedSection>
           <UnassignedHeader>
             <h4>Unassigned Tables</h4>
@@ -334,17 +329,19 @@ const ZoneManagement: React.FC = () => {
                    <ZoneName>{zone.name}</ZoneName>
                    <ZoneColor color={zone.color} />
                  </ZoneInfo>
-                 <ZoneActions>
-                   <AddTableButton onClick={() => setShowAddTableForm(zone._id)}>
-                     + Add Table
-                   </AddTableButton>
-                   <EditButton onClick={() => handleEdit(zone)}>
-                     Edit
-                   </EditButton>
-                   <DeleteButton onClick={() => handleDelete(zone._id)}>
-                     Delete
-                   </DeleteButton>
-                 </ZoneActions>
+                 {canManageZones && (
+                   <ZoneActions>
+                     <AddTableButton onClick={() => setShowAddTableForm(zone._id)}>
+                       + Add Table
+                     </AddTableButton>
+                     <EditButton onClick={() => handleEdit(zone)}>
+                       Edit
+                     </EditButton>
+                     <DeleteButton onClick={() => handleDelete(zone._id)}>
+                       Delete
+                     </DeleteButton>
+                   </ZoneActions>
+                 )}
                </ZoneHeader>
               
               {zone.description && (

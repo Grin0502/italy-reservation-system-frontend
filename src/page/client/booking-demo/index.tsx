@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import BookingDemo from '../../../components/BookingDemo';
-import RoleSwitcher from '../../../components/RoleSwitcher';
 
 const BookingDemoPage = () => {
   return (
@@ -10,10 +9,6 @@ const BookingDemoPage = () => {
         <h1>Booking Demo</h1>
         <p>Test and understand how booking time margins work in practice</p>
       </PageHeader>
-
-      {/* Development Role Switcher */}
-      <RoleSwitcher />
-
       <BookingDemo />
     </BookingDemoContainer>
   );

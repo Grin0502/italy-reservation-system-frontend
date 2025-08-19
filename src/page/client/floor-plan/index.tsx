@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import TableManagement from '../../../components/TableManagement';
-import RoleSwitcher from '../../../components/RoleSwitcher';
 
 const FloorPlanPage = () => {
   return (
@@ -10,10 +9,6 @@ const FloorPlanPage = () => {
         <h1>Table Management</h1>
         <p>Manage restaurant tables, zones, and floor plan layout</p>
       </PageHeader>
-
-      {/* Development Role Switcher */}
-      <RoleSwitcher />
-
       <TableManagement />
     </FloorPlanContainer>
   );

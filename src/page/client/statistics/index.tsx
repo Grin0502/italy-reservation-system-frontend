@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import DynamicStatistics from "../../../components/DynamicStatistics";
 import TableManagement from "../../../components/TableManagement";
 import ZoneManagement from "../../../components/ZoneManagement";
-import RoleSwitcher from "../../../components/RoleSwitcher";
 import { useUser } from "../../../contexts/UserContext";
 
 type TabType = 'statistics' | 'tables' | 'zones';
@@ -33,8 +32,6 @@ const StatisticsPage = () => {
 
   return (
     <StatisticsContainer>
-      {/* Development Role Switcher */}
-      <RoleSwitcher />
       
       {tabs.length > 1 && (
         <TabNavigation>

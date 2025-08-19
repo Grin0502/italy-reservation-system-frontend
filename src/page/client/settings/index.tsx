@@ -3,7 +3,6 @@ import { useState } from "react";
 import RestaurantInfoSettings from "../../../components/RestaurantInfoSettings";
 import NotificationSettings from "../../../components/NotificationSettings";
 import BookingRulesSettings from "../../../components/BookingRulesSettings";
-import RoleSwitcher from "../../../components/RoleSwitcher";
 import { useUser } from "../../../contexts/UserContext";
 
 type TabType = 'restaurant' | 'notifications' | 'booking-rules';
@@ -13,9 +12,9 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<TabType>('restaurant');
 
   const tabs = [
-    { id: 'restaurant', label: 'Restaurant Details', icon: '🏪' },
-    ...(hasPermission('manage_notifications') || hasPermission('view_notifications') ? [{ id: 'notifications', label: 'Notifications', icon: '🔔' }] : []),
-    ...(hasPermission('manage_booking_rules') || hasPermission('view_booking_rules') ? [{ id: 'booking-rules', label: 'Booking Rules', icon: '📋' }] : []),
+    ...(hasPermission('manage_restaurant_info') ? [{ id: 'restaurant', label: 'Restaurant Details', icon: '🏪' }] : []),
+    ...(hasPermission('manage_notifications') ? [{ id: 'notifications', label: 'Notifications', icon: '🔔' }] : []),
+    ...(hasPermission('manage_booking_rules') ? [{ id: 'booking-rules', label: 'Booking Rules', icon: '📋' }] : []),
   ];
 
   const renderTabContent = () => {
@@ -27,9 +26,25 @@ const SettingsPage = () => {
       case 'booking-rules':
         return <BookingRulesSettings />;
       default:
-        return <RestaurantInfoSettings />;
+        return tabs.length > 0 ? <RestaurantInfoSettings /> : null;
     }
   };
+
+  // If no tabs are available, show access denied
+  if (tabs.length === 0) {
+    return (
+      <SettingsContainer>
+        <PageHeader>
+          <h1>Settings</h1>
+          <p>Manage your restaurant preferences and account settings</p>
+        </PageHeader>
+        <AccessDenied>
+          <h3>Access Denied</h3>
+          <p>You don't have permission to access any settings.</p>
+        </AccessDenied>
+      </SettingsContainer>
+    );
+  }
 
   return (
     <SettingsContainer>
@@ -37,9 +52,6 @@ const SettingsPage = () => {
         <h1>Settings</h1>
         <p>Manage your restaurant preferences and account settings</p>
       </PageHeader>
-
-      {/* Development Role Switcher */}
-      <RoleSwitcher />
 
       <SettingsContent>
         {tabs.length > 1 && (
@@ -144,6 +156,23 @@ const SupportButton = styled.button`
   &:hover {
     background: #0891b2;
     transform: translateY(-2px);
+  }
+`;
+
+const AccessDenied = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  h3 {
+    color: #ef4444;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: #64748b;
   }
 `;
 

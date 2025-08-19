@@ -29,14 +29,7 @@ const TableManagement: React.FC = () => {
     status: 'available'
   });
 
-  if (!hasPermission('manage_tables')) {
-    return (
-      <AccessDenied>
-        <h3>Access Denied</h3>
-        <p>You don't have permission to manage tables.</p>
-      </AccessDenied>
-    );
-  }
+  const canManageTables = hasPermission('manage_tables');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,9 +138,11 @@ const TableManagement: React.FC = () => {
     <Container>
       <Header>
         <h3>Table Management</h3>
-        <AddButton onClick={() => setShowAddForm(true)}>
-          + Add Table
-        </AddButton>
+        {canManageTables && (
+          <AddButton onClick={() => setShowAddForm(true)}>
+            + Add Table
+          </AddButton>
+        )}
       </Header>
 
       {error && (
@@ -156,8 +151,8 @@ const TableManagement: React.FC = () => {
         </ErrorMessage>
       )}
 
-      {/* Unassigned Tables Section */}
-      {getUnassignedTables().length > 0 && (
+             {/* Unassigned Tables Section */}
+       {canManageTables && getUnassignedTables().length > 0 && (
         <UnassignedSection>
           <UnassignedHeader>
             <h4>Unassigned Tables</h4>
@@ -196,7 +191,7 @@ const TableManagement: React.FC = () => {
         </UnassignedSection>
       )}
 
-      {(showAddForm || editingTable) && (
+             {canManageTables && (showAddForm || editingTable) && (
         <FormOverlay>
           <FormCard>
             <FormHeader>
@@ -272,7 +267,7 @@ const TableManagement: React.FC = () => {
         </FormOverlay>
       )}
 
-      {movingTable && (
+             {canManageTables && movingTable && (
         <FormOverlay>
           <FormCard>
             <FormHeader>
@@ -330,17 +325,19 @@ const TableManagement: React.FC = () => {
                   <span>{table.capacity} seats</span>
                 </InfoItem>
               </TableInfo>
-              <TableActions>
-                <MoveButton onClick={() => setMovingTable(table._id)}>
-                  Move
-                </MoveButton>
-                <EditButton onClick={() => handleEdit(table)}>
-                  Edit
-                </EditButton>
-                <DeleteButton onClick={() => handleDelete(table._id)}>
-                  Delete
-                </DeleteButton>
-              </TableActions>
+                             {canManageTables && (
+                 <TableActions>
+                   <MoveButton onClick={() => setMovingTable(table._id)}>
+                     Move
+                   </MoveButton>
+                   <EditButton onClick={() => handleEdit(table)}>
+                     Edit
+                   </EditButton>
+                   <DeleteButton onClick={() => handleDelete(table._id)}>
+                     Delete
+                   </DeleteButton>
+                 </TableActions>
+               )}
             </TableCard>
           );
         })}
