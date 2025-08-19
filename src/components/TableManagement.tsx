@@ -9,7 +9,6 @@ import { useUser } from '../contexts/UserContext';
 interface TableFormData {
   number: string;
   zoneId: string;
-  capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   isActive?: boolean;
 }
@@ -25,7 +24,6 @@ const TableManagement: React.FC = () => {
   const [formData, setFormData] = useState<TableFormData>({
     number: '',
     zoneId: '',
-    capacity: 2,
     status: 'available'
   });
 
@@ -41,7 +39,7 @@ const TableManagement: React.FC = () => {
       } else {
         await addTable({ ...formData, isActive: true });
       }
-      setFormData({ number: '', zoneId: '', capacity: 2, status: 'available' });
+      setFormData({ number: '', zoneId: '', status: 'available' });
       setShowAddForm(false);
     } catch (err) {
       console.error('Error saving table:', err);
@@ -77,7 +75,6 @@ const TableManagement: React.FC = () => {
     setFormData({
       number: table.number,
       zoneId: zoneId,
-      capacity: table.capacity,
       status: table.status
     });
   };
@@ -85,7 +82,7 @@ const TableManagement: React.FC = () => {
   const handleCancel = () => {
     setEditingTable(null);
     setShowAddForm(false);
-    setFormData({ number: '', zoneId: '', capacity: 2, status: 'available' });
+    setFormData({ number: '', zoneId: '', status: 'available' });
   };
 
   const handleMoveCancel = () => {

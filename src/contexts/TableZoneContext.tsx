@@ -7,7 +7,6 @@ export interface Table {
   _id: string;
   number: string;
   zoneId: string | { _id: string; name: string; color: string };
-  capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   position?: { x: number; y: number };
   shape?: 'round' | 'square' | 'rectangle';
@@ -21,9 +20,11 @@ export interface Zone {
   name: string;
   description?: string;
   color: string;
+  seatsPerTable: number;
   position?: { x: number; y: number };
   isActive: boolean;
   tableCount?: number;
+  capacity?: number;
 }
 
 interface TableZoneContextType {

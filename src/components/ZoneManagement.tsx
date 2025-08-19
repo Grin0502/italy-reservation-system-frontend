@@ -10,12 +10,12 @@ interface ZoneFormData {
   name: string;
   description: string;
   color: string;
+  seatsPerTable: number;
   isActive?: boolean;
 }
 
 interface TableFormData {
   number: string;
-  capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
 }
 
@@ -29,11 +29,11 @@ const ZoneManagement: React.FC = () => {
   const [formData, setFormData] = useState<ZoneFormData>({
     name: '',
     description: '',
-    color: '#06b6d4'
+    color: '#06b6d4',
+    seatsPerTable: 4
   });
   const [tableFormData, setTableFormData] = useState<TableFormData>({
     number: '',
-    capacity: 2,
     status: 'available'
   });
 
@@ -49,7 +49,7 @@ const ZoneManagement: React.FC = () => {
       } else {
         await addZone({ ...formData, isActive: true });
       }
-      setFormData({ name: '', description: '', color: '#06b6d4' });
+      setFormData({ name: '', description: '', color: '#06b6d4', seatsPerTable: 4 });
       setShowAddForm(false);
     } catch (err) {
       console.error('Error saving zone:', err);
@@ -68,7 +68,7 @@ const ZoneManagement: React.FC = () => {
           zoneId: showAddTableForm,
           isActive: true
         });
-        setTableFormData({ number: '', capacity: 2, status: 'available' });
+        setTableFormData({ number: '', status: 'available' });
         setShowAddTableForm(null);
       }
     } catch (err) {
@@ -83,19 +83,20 @@ const ZoneManagement: React.FC = () => {
     setFormData({
       name: zone.name,
       description: zone.description || '',
-      color: zone.color
+      color: zone.color,
+      seatsPerTable: zone.seatsPerTable
     });
   };
 
   const handleCancel = () => {
     setEditingZone(null);
     setShowAddForm(false);
-    setFormData({ name: '', description: '', color: '#06b6d4' });
+    setFormData({ name: '', description: '', color: '#06b6d4', seatsPerTable: 4 });
   };
 
   const handleTableCancel = () => {
     setShowAddTableForm(null);
-    setTableFormData({ number: '', capacity: 2, status: 'available' });
+    setTableFormData({ number: '', status: 'available' });
   };
 
   const handleDelete = async (zoneId: string) => {
@@ -114,10 +115,11 @@ const ZoneManagement: React.FC = () => {
 
   const getZoneStats = (zoneId: string) => {
     const zoneTables = getTablesByZone(zoneId);
+    const zone = zones.find(z => z._id === zoneId);
     const totalTables = zoneTables.length;
     const availableTables = zoneTables.filter(t => t.status === 'available').length;
     const occupiedTables = zoneTables.filter(t => t.status === 'occupied').length;
-    const totalCapacity = zoneTables.reduce((sum, table) => sum + table.capacity, 0);
+    const totalCapacity = zone ? zone.seatsPerTable * totalTables : 0;
     
     return { totalTables, availableTables, occupiedTables, totalCapacity };
   };
@@ -205,6 +207,24 @@ const ZoneManagement: React.FC = () => {
                 />
               </FormGroup>
               
+              <FormGroup>
+                <Label>Seats per Table</Label>
+                <Select
+                  value={formData.seatsPerTable}
+                  onChange={(e) => setFormData({ ...formData, seatsPerTable: parseInt(e.target.value) })}
+                  required
+                >
+                  <option value={2}>2 seats</option>
+                  <option value={4}>4 seats</option>
+                  <option value={6}>6 seats</option>
+                  <option value={8}>8 seats</option>
+                  <option value={10}>10 seats</option>
+                  <option value={12}>12 seats</option>
+                  <option value={16}>16 seats</option>
+                  <option value={20}>20 seats</option>
+                </Select>
+              </FormGroup>
+              
                              <ButtonGroup>
                  <CancelButton type="button" onClick={handleCancel} disabled={isSubmitting}>
                    Cancel
@@ -237,20 +257,7 @@ const ZoneManagement: React.FC = () => {
                 />
               </FormGroup>
               
-              <FormGroup>
-                <Label>Capacity</Label>
-                <Select
-                  value={tableFormData.capacity}
-                  onChange={(e) => setTableFormData({ ...tableFormData, capacity: parseInt(e.target.value) })}
-                  required
-                >
-                  <option value={2}>2 seats</option>
-                  <option value={4}>4 seats</option>
-                  <option value={6}>6 seats</option>
-                  <option value={8}>8 seats</option>
-                  <option value={10}>10 seats</option>
-                </Select>
-              </FormGroup>
+
               
               <FormGroup>
                 <Label>Status</Label>
@@ -291,7 +298,7 @@ const ZoneManagement: React.FC = () => {
                              <UnassignedTableCard key={table._id}>
                  <TableInfo>
                    <TableNumber>{table.number}</TableNumber>
-                   <TableCapacity>{table.capacity} seats</TableCapacity>
+                   <TableCapacity>Unassigned</TableCapacity>
                    <StatusBadge status={table.status}>
                      {table.status}
                    </StatusBadge>
@@ -362,6 +369,10 @@ const ZoneManagement: React.FC = () => {
                   <StatValue occupied>{stats.occupiedTables}</StatValue>
                 </StatItem>
                 <StatItem>
+                  <StatLabel>Seats per Table</StatLabel>
+                  <StatValue>{zone.seatsPerTable} seats</StatValue>
+                </StatItem>
+                <StatItem>
                   <StatLabel>Total Capacity</StatLabel>
                   <StatValue>{stats.totalCapacity} seats</StatValue>
                 </StatItem>
@@ -374,7 +385,7 @@ const ZoneManagement: React.FC = () => {
                      {getTablesByZone(zone._id).map(table => (
                        <TableItem key={table._id}>
                         <span>{table.number}</span>
-                        <span>{table.capacity} seats</span>
+                        <span>{zone.seatsPerTable} seats</span>
                         <StatusBadge status={table.status}>
                           {table.status}
                         </StatusBadge>
