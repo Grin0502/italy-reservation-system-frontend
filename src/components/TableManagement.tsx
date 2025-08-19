@@ -173,7 +173,7 @@ const TableManagement: React.FC = () => {
               <UnassignedTableCard key={table._id}>
                 <TableInfo>
                   <TableNumber>{table.number}</TableNumber>
-                  <span>{table.capacity} seats</span>
+                  <span>Unassigned</span>
                   <StatusBadge color={getStatusColor(table.status)}>
                     {table.status}
                   </StatusBadge>
@@ -229,26 +229,14 @@ const TableManagement: React.FC = () => {
                   <option value="">No zone (unassigned)</option>
                   {zones.map(zone => (
                     <option key={zone._id} value={zone._id}>
-                      {zone.name}
+                      {zone.name} ({zone.seatsPerTable} seats/table)
                     </option>
                   ))}
                 </Select>
+                <FormNote>Note: Table capacity is managed at the zone level. Select a zone to inherit its seating configuration.</FormNote>
               </FormGroup>
               
-              <FormGroup>
-                <Label>Capacity</Label>
-                <Select
-                  value={formData.capacity}
-                  onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
-                  required
-                >
-                  <option value={2}>2 seats</option>
-                  <option value={4}>4 seats</option>
-                  <option value={6}>6 seats</option>
-                  <option value={8}>8 seats</option>
-                  <option value={10}>10 seats</option>
-                </Select>
-              </FormGroup>
+
               
               <FormGroup>
                 <Label>Status</Label>
@@ -319,13 +307,18 @@ const TableManagement: React.FC = () => {
           // Handle both populated zoneId (object) and non-populated zoneId (string)
           let zoneId: string;
           let zoneName: string;
+          let zoneSeatsPerTable: number = 0;
           if (typeof table.zoneId === 'object' && table.zoneId !== null) {
             zoneId = table.zoneId._id;
             zoneName = table.zoneId.name;
+            // For populated objects, we need to find the zone to get seatsPerTable
+            const zone = zones.find(z => z._id === zoneId);
+            zoneSeatsPerTable = zone?.seatsPerTable || 0;
           } else {
             zoneId = table.zoneId as string;
             const zone = zones.find(z => z._id === zoneId);
             zoneName = zone?.name || 'Unassigned';
+            zoneSeatsPerTable = zone?.seatsPerTable || 0;
           }
           return (
             <TableCard key={table._id}>
@@ -342,7 +335,7 @@ const TableManagement: React.FC = () => {
                 </InfoItem>
                 <InfoItem>
                   <Label>Capacity:</Label>
-                  <span>{table.capacity} seats</span>
+                  <span>{zoneName !== 'Unassigned' ? `${zoneSeatsPerTable} seats` : 'Unassigned'}</span>
                 </InfoItem>
               </TableInfo>
                              {canManageTables && (
@@ -465,6 +458,13 @@ const Label = styled.label`
   font-weight: 500;
   color: #374151;
   font-size: 0.875rem;
+`;
+
+const FormNote = styled.p`
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-style: italic;
 `;
 
 const Input = styled.input`
