@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { tablesAPI, zonesAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
 export interface Table {
   _id: string;
@@ -44,35 +45,47 @@ interface TableZoneContextType {
 const TableZoneContext = createContext<TableZoneContextType | undefined>(undefined);
 
 export const TableZoneProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, token } = useAuth();
   const [tables, setTables] = useState<Table[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
+    if (!user || !token) {
+      return; // Don't fetch if not authenticated
+    }
+    
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch tables and zones in parallel
       const [tablesResponse, zonesResponse] = await Promise.all([
         tablesAPI.getAll(),
         zonesAPI.getAll()
       ]);
-
+      
       setTables(tablesResponse.data || []);
       setZones(zonesResponse.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch data');
       console.error('Error fetching data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch data when user logs in
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user && token) {
+      fetchData();
+    } else {
+      // Clear data when user logs out
+      setTables([]);
+      setZones([]);
+      setError(null);
+    }
+  }, [user, token]);
 
   const addTable = async (table: Omit<Table, '_id'>) => {
     try {

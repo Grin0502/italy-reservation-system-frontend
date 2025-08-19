@@ -133,6 +133,14 @@ const TableManagement: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Container>
+        <ErrorMessage>Error: {error}</ErrorMessage>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <Header>
