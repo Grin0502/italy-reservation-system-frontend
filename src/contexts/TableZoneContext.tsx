@@ -1,108 +1,153 @@
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { tablesAPI, zonesAPI } from '../services/api';
 
 export interface Table {
-  id: string;
+  _id: string;
   number: string;
   zoneId: string;
   capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   position?: { x: number; y: number };
+  shape?: 'round' | 'square' | 'rectangle';
+  notes?: string;
+  isActive: boolean;
+  currentBooking?: any;
 }
 
 export interface Zone {
-  id: string;
+  _id: string;
   name: string;
   description?: string;
   color: string;
-  tables: string[]; // Table IDs
+  position?: { x: number; y: number };
+  isActive: boolean;
+  tableCount?: number;
 }
 
 interface TableZoneContextType {
   tables: Table[];
   zones: Zone[];
-  addTable: (table: Omit<Table, 'id'>) => void;
-  removeTable: (tableId: string) => void;
-  updateTable: (tableId: string, updates: Partial<Table>) => void;
-  addZone: (zone: Omit<Zone, 'id' | 'tables'>) => void;
-  removeZone: (zoneId: string) => void;
-  updateZone: (zoneId: string, updates: Partial<Zone>) => void;
+  loading: boolean;
+  error: string | null;
+  addTable: (table: Omit<Table, '_id'>) => Promise<void>;
+  removeTable: (tableId: string) => Promise<void>;
+  updateTable: (tableId: string, updates: Partial<Table>) => Promise<void>;
+  addZone: (zone: Omit<Zone, '_id'>) => Promise<void>;
+  removeZone: (zoneId: string) => Promise<void>;
+  updateZone: (zoneId: string, updates: Partial<Zone>) => Promise<void>;
   getTablesByZone: (zoneId: string) => Table[];
   getZoneById: (zoneId: string) => Zone | undefined;
+  refreshData: () => Promise<void>;
 }
 
 const TableZoneContext = createContext<TableZoneContextType | undefined>(undefined);
 
 export const TableZoneProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [tables, setTables] = useState<Table[]>([
-    { id: '1', number: 'A1', zoneId: 'zone-a', capacity: 2, status: 'available' },
-    { id: '2', number: 'A2', zoneId: 'zone-a', capacity: 4, status: 'occupied' },
-    { id: '3', number: 'A3', zoneId: 'zone-a', capacity: 6, status: 'available' },
-    { id: '4', number: 'A4', zoneId: 'zone-a', capacity: 8, status: 'reserved' },
-    { id: '5', number: 'B1', zoneId: 'zone-b', capacity: 2, status: 'available' },
-    { id: '6', number: 'B2', zoneId: 'zone-b', capacity: 4, status: 'occupied' },
-    { id: '7', number: 'B3', zoneId: 'zone-b', capacity: 6, status: 'available' },
-    { id: '8', number: 'B4', zoneId: 'zone-b', capacity: 8, status: 'maintenance' },
-    { id: '9', number: 'C1', zoneId: 'zone-c', capacity: 2, status: 'available' },
-    { id: '10', number: 'C2', zoneId: 'zone-c', capacity: 4, status: 'occupied' },
-    { id: '11', number: 'C3', zoneId: 'zone-c', capacity: 6, status: 'available' },
-    { id: '12', number: 'C4', zoneId: 'zone-c', capacity: 8, status: 'reserved' },
-  ]);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [zones, setZones] = useState<Zone[]>([
-    { id: 'zone-a', name: 'Zone A', description: 'Main dining area', color: '#06b6d4', tables: ['1', '2', '3', '4'] },
-    { id: 'zone-b', name: 'Zone B', description: 'Window seating', color: '#3b82f6', tables: ['5', '6', '7', '8'] },
-    { id: 'zone-c', name: 'Zone C', description: 'Private dining', color: '#10b981', tables: ['9', '10', '11', '12'] },
-  ]);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch tables and zones in parallel
+      const [tablesResponse, zonesResponse] = await Promise.all([
+        tablesAPI.getAll(),
+        zonesAPI.getAll()
+      ]);
 
-  const addTable = (table: Omit<Table, 'id'>) => {
-    const newId = (tables.length + 1).toString();
-    const newTable = { ...table, id: newId };
-    setTables(prev => [...prev, newTable]);
-    
-    // Update zone's tables array
-    setZones(prev => prev.map(zone => 
-      zone.id === table.zoneId 
-        ? { ...zone, tables: [...zone.tables, newId] }
-        : zone
-    ));
+      setTables(tablesResponse.data || []);
+      setZones(zonesResponse.data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeTable = (tableId: string) => {
-    setTables(prev => prev.filter(table => table.id !== tableId));
-    
-    // Remove table from zone's tables array
-    setZones(prev => prev.map(zone => ({
-      ...zone,
-      tables: zone.tables.filter(id => id !== tableId)
-    })));
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const addTable = async (table: Omit<Table, '_id'>) => {
+    try {
+      setError(null);
+      const response = await tablesAPI.create(table);
+      const newTable = response.data;
+      setTables(prev => [...prev, newTable]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add table');
+      throw err;
+    }
   };
 
-  const updateTable = (tableId: string, updates: Partial<Table>) => {
-    setTables(prev => prev.map(table => 
-      table.id === tableId ? { ...table, ...updates } : table
-    ));
+  const removeTable = async (tableId: string) => {
+    try {
+      setError(null);
+      await tablesAPI.delete(tableId);
+      setTables(prev => prev.filter(table => table._id !== tableId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove table');
+      throw err;
+    }
   };
 
-  const addZone = (zone: Omit<Zone, 'id' | 'tables'>) => {
-    const newId = `zone-${zones.length + 1}`;
-    const newZone = { ...zone, id: newId, tables: [] };
-    setZones(prev => [...prev, newZone]);
+  const updateTable = async (tableId: string, updates: Partial<Table>) => {
+    try {
+      setError(null);
+      const response = await tablesAPI.update(tableId, updates);
+      const updatedTable = response.data;
+      setTables(prev => prev.map(table => 
+        table._id === tableId ? updatedTable : table
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update table');
+      throw err;
+    }
   };
 
-  const removeZone = (zoneId: string) => {
-    // Remove all tables in this zone
-    const zoneTables = zones.find(z => z.id === zoneId)?.tables || [];
-    setTables(prev => prev.filter(table => !zoneTables.includes(table.id)));
-    
-    // Remove the zone
-    setZones(prev => prev.filter(zone => zone.id !== zoneId));
+  const addZone = async (zone: Omit<Zone, '_id'>) => {
+    try {
+      setError(null);
+      const response = await zonesAPI.create(zone);
+      const newZone = response.data;
+      setZones(prev => [...prev, newZone]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add zone');
+      throw err;
+    }
   };
 
-  const updateZone = (zoneId: string, updates: Partial<Zone>) => {
-    setZones(prev => prev.map(zone => 
-      zone.id === zoneId ? { ...zone, ...updates } : zone
-    ));
+  const removeZone = async (zoneId: string) => {
+    try {
+      setError(null);
+      await zonesAPI.delete(zoneId);
+      setZones(prev => prev.filter(zone => zone._id !== zoneId));
+      // Also remove tables in this zone
+      setTables(prev => prev.filter(table => table.zoneId !== zoneId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove zone');
+      throw err;
+    }
+  };
+
+  const updateZone = async (zoneId: string, updates: Partial<Zone>) => {
+    try {
+      setError(null);
+      const response = await zonesAPI.update(zoneId, updates);
+      const updatedZone = response.data;
+      setZones(prev => prev.map(zone => 
+        zone._id === zoneId ? updatedZone : zone
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update zone');
+      throw err;
+    }
   };
 
   const getTablesByZone = (zoneId: string) => {
@@ -110,13 +155,19 @@ export const TableZoneProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   const getZoneById = (zoneId: string) => {
-    return zones.find(zone => zone.id === zoneId);
+    return zones.find(zone => zone._id === zoneId);
+  };
+
+  const refreshData = async () => {
+    await fetchData();
   };
 
   return (
     <TableZoneContext.Provider value={{
       tables,
       zones,
+      loading,
+      error,
       addTable,
       removeTable,
       updateTable,
@@ -124,7 +175,8 @@ export const TableZoneProvider: React.FC<{ children: ReactNode }> = ({ children 
       removeZone,
       updateZone,
       getTablesByZone,
-      getZoneById
+      getZoneById,
+      refreshData
     }}>
       {children}
     </TableZoneContext.Provider>

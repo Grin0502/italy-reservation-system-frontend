@@ -5,7 +5,8 @@ import {
   AiOutlineLayout,
   AiOutlineBarChart,
   AiOutlineSetting,
-  AiOutlineClockCircle
+  AiOutlineClockCircle,
+  AiOutlineAppstore
 } from "react-icons/ai";
 
 const Sidebar = () => {
@@ -13,7 +14,8 @@ const Sidebar = () => {
 
   const navItems = [
     { path: "/", label: "Home", icon: AiOutlineHome },
-    { path: "/floor-plan", label: "Floor Plan", icon: AiOutlineLayout },
+    { path: "/floor-plan", label: "Table Management", icon: AiOutlineLayout },
+    { path: "/zone-management", label: "Zone Management", icon: AiOutlineAppstore },
     { path: "/booking-demo", label: "Booking Demo", icon: AiOutlineClockCircle },
     { path: "/statistics", label: "Statistics", icon: AiOutlineBarChart },
     { path: "/settings", label: "Settings", icon: AiOutlineSetting },

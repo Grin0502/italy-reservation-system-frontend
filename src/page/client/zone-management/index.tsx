@@ -1,25 +1,25 @@
 import React from 'react';
 import styled from 'styled-components';
-import TableManagement from '../../../components/TableManagement';
+import ZoneManagement from '../../../components/ZoneManagement';
 import RoleSwitcher from '../../../components/RoleSwitcher';
 
-const FloorPlanPage = () => {
+const ZoneManagementPage = () => {
   return (
-    <FloorPlanContainer>
+    <ZoneManagementContainer>
       <PageHeader>
-        <h1>Table Management</h1>
-        <p>Manage restaurant tables, zones, and floor plan layout</p>
+        <h1>Zone Management</h1>
+        <p>Organize restaurant areas and manage table zones</p>
       </PageHeader>
 
       {/* Development Role Switcher */}
       <RoleSwitcher />
 
-      <TableManagement />
-    </FloorPlanContainer>
+      <ZoneManagement />
+    </ZoneManagementContainer>
   );
 };
 
-const FloorPlanContainer = styled.div`
+const ZoneManagementContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
 `;
@@ -40,4 +40,4 @@ const PageHeader = styled.div`
   }
 `;
 
-export default FloorPlanPage;
+export default ZoneManagementPage;

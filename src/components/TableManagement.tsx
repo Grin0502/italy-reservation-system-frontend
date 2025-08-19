@@ -11,13 +11,17 @@ interface TableFormData {
   zoneId: string;
   capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
+  isActive?: boolean;
 }
 
 const TableManagement: React.FC = () => {
-  const { tables, zones, addTable, removeTable, updateTable } = useTableZone();
+  const { tables, zones, addTable, removeTable, updateTable, loading, error } = useTableZone();
   const { hasPermission } = useUser();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
+  const [movingTable, setMovingTable] = useState<string | null>(null); // tableId or null
+  const [targetZoneId, setTargetZoneId] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<TableFormData>({
     number: '',
     zoneId: '',
@@ -34,16 +38,38 @@ const TableManagement: React.FC = () => {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingTable) {
-      updateTable(editingTable.id, formData);
-      setEditingTable(null);
-    } else {
-      addTable(formData);
+    setIsSubmitting(true);
+    try {
+      if (editingTable) {
+        await updateTable(editingTable._id, formData);
+        setEditingTable(null);
+      } else {
+        await addTable({ ...formData, isActive: true });
+      }
+      setFormData({ number: '', zoneId: '', capacity: 2, status: 'available' });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Error saving table:', err);
+    } finally {
+      setIsSubmitting(false);
     }
-    setFormData({ number: '', zoneId: '', capacity: 2, status: 'available' });
-    setShowAddForm(false);
+  };
+
+  const handleMoveTable = async (tableId: string) => {
+    if (targetZoneId) {
+      setIsSubmitting(true);
+      try {
+        await updateTable(tableId, { zoneId: targetZoneId });
+        setMovingTable(null);
+        setTargetZoneId('');
+      } catch (err) {
+        console.error('Error moving table:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
   };
 
   const handleEdit = (table: Table) => {
@@ -62,6 +88,21 @@ const TableManagement: React.FC = () => {
     setFormData({ number: '', zoneId: '', capacity: 2, status: 'available' });
   };
 
+  const handleMoveCancel = () => {
+    setMovingTable(null);
+    setTargetZoneId('');
+  };
+
+  const handleDelete = async (tableId: string) => {
+    if (confirm('Are you sure you want to delete this table?')) {
+      try {
+        await removeTable(tableId);
+      } catch (err) {
+        console.error('Error deleting table:', err);
+      }
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'available': return '#10b981';
@@ -72,6 +113,26 @@ const TableManagement: React.FC = () => {
     }
   };
 
+  const getUnassignedTables = () => {
+    return tables.filter(table => !table.zoneId || table.zoneId === '');
+  };
+
+  const assignTableToZone = async (tableId: string, zoneId: string) => {
+    try {
+      await updateTable(tableId, { zoneId });
+    } catch (err) {
+      console.error('Error assigning table to zone:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Container>
+        <LoadingMessage>Loading tables...</LoadingMessage>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <Header>
@@ -80,6 +141,52 @@ const TableManagement: React.FC = () => {
           + Add Table
         </AddButton>
       </Header>
+
+      {error && (
+        <ErrorMessage>
+          Error: {error}
+        </ErrorMessage>
+      )}
+
+      {/* Unassigned Tables Section */}
+      {getUnassignedTables().length > 0 && (
+        <UnassignedSection>
+          <UnassignedHeader>
+            <h4>Unassigned Tables</h4>
+            <span>{getUnassignedTables().length} tables</span>
+          </UnassignedHeader>
+          <UnassignedGrid>
+            {getUnassignedTables().map(table => (
+              <UnassignedTableCard key={table._id}>
+                <TableInfo>
+                  <TableNumber>{table.number}</TableNumber>
+                  <span>{table.capacity} seats</span>
+                  <StatusBadge color={getStatusColor(table.status)}>
+                    {table.status}
+                  </StatusBadge>
+                </TableInfo>
+                <UnassignedAssignActions>
+                  <UnassignedAssignSelect
+                    value=""
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                      if (e.target.value) {
+                        assignTableToZone(table._id, e.target.value);
+                      }
+                    }}
+                  >
+                    <option value="">Assign to zone...</option>
+                    {zones.map(zone => (
+                      <option key={zone._id} value={zone._id}>
+                        {zone.name}
+                      </option>
+                    ))}
+                  </UnassignedAssignSelect>
+                </UnassignedAssignActions>
+              </UnassignedTableCard>
+            ))}
+          </UnassignedGrid>
+        </UnassignedSection>
+      )}
 
       {(showAddForm || editingTable) && (
         <FormOverlay>
@@ -105,11 +212,10 @@ const TableManagement: React.FC = () => {
                 <Select
                   value={formData.zoneId}
                   onChange={(e) => setFormData({ ...formData, zoneId: e.target.value })}
-                  required
                 >
-                  <option value="">Select a zone</option>
+                  <option value="">No zone (unassigned)</option>
                   {zones.map(zone => (
-                    <option key={zone.id} value={zone.id}>
+                    <option key={zone._id} value={zone._id}>
                       {zone.name}
                     </option>
                   ))}
@@ -146,11 +252,48 @@ const TableManagement: React.FC = () => {
               </FormGroup>
               
               <ButtonGroup>
-                <CancelButton type="button" onClick={handleCancel}>
+                <CancelButton type="button" onClick={handleCancel} disabled={isSubmitting}>
                   Cancel
                 </CancelButton>
-                <SubmitButton type="submit">
-                  {editingTable ? 'Update' : 'Add'} Table
+                <SubmitButton type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : (editingTable ? 'Update' : 'Add') + ' Table'}
+                </SubmitButton>
+              </ButtonGroup>
+            </Form>
+          </FormCard>
+        </FormOverlay>
+      )}
+
+      {movingTable && (
+        <FormOverlay>
+          <FormCard>
+            <FormHeader>
+              <h4>Move Table to Zone</h4>
+              <CloseButton onClick={handleMoveCancel}>×</CloseButton>
+            </FormHeader>
+            <Form onSubmit={(e) => { e.preventDefault(); handleMoveTable(movingTable); }}>
+              <FormGroup>
+                <Label>Select Target Zone</Label>
+                <Select
+                  value={targetZoneId}
+                  onChange={(e) => setTargetZoneId(e.target.value)}
+                  required
+                >
+                  <option value="">Select a zone</option>
+                  {zones.map(zone => (
+                    <option key={zone._id} value={zone._id}>
+                      {zone.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+              
+              <ButtonGroup>
+                <CancelButton type="button" onClick={handleMoveCancel} disabled={isSubmitting}>
+                  Cancel
+                </CancelButton>
+                <SubmitButton type="submit" disabled={!targetZoneId || isSubmitting}>
+                  {isSubmitting ? 'Moving...' : 'Move Table'}
                 </SubmitButton>
               </ButtonGroup>
             </Form>
@@ -160,9 +303,9 @@ const TableManagement: React.FC = () => {
 
       <TableGrid>
         {tables.map(table => {
-          const zone = zones.find(z => z.id === table.zoneId);
+          const zone = zones.find(z => z._id === table.zoneId);
           return (
-            <TableCard key={table.id}>
+            <TableCard key={table._id}>
               <TableHeader>
                 <TableNumber>{table.number}</TableNumber>
                 <StatusBadge color={getStatusColor(table.status)}>
@@ -172,7 +315,7 @@ const TableManagement: React.FC = () => {
               <TableInfo>
                 <InfoItem>
                   <Label>Zone:</Label>
-                  <span>{zone?.name}</span>
+                  <span>{zone?.name || 'Unassigned'}</span>
                 </InfoItem>
                 <InfoItem>
                   <Label>Capacity:</Label>
@@ -180,10 +323,13 @@ const TableManagement: React.FC = () => {
                 </InfoItem>
               </TableInfo>
               <TableActions>
+                <MoveButton onClick={() => setMovingTable(table._id)}>
+                  Move
+                </MoveButton>
                 <EditButton onClick={() => handleEdit(table)}>
                   Edit
                 </EditButton>
-                <DeleteButton onClick={() => removeTable(table.id)}>
+                <DeleteButton onClick={() => handleDelete(table._id)}>
                   Delete
                 </DeleteButton>
               </TableActions>
@@ -415,6 +561,21 @@ const TableActions = styled.div`
   gap: 0.5rem;
 `;
 
+const MoveButton = styled.button`
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  flex: 1;
+  
+  &:hover {
+    background: #d97706;
+  }
+`;
+
 const EditButton = styled.button`
   background: #3b82f6;
   color: white;
@@ -453,6 +614,82 @@ const AccessDenied = styled.div`
   h3 {
     margin-bottom: 0.5rem;
   }
+`;
+
+const UnassignedSection = styled.div`
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f0f9eb;
+  border: 1px solid #e1f3d8;
+  border-radius: 8px;
+`;
+
+const UnassignedHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  
+  h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #22c55e;
+  }
+  
+  span {
+    font-size: 0.875rem;
+    color: #4b5563;
+  }
+`;
+
+const UnassignedGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+`;
+
+const UnassignedTableCard = styled.div`
+  border: 1px solid #d1fae5;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: #ecfdf5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const UnassignedAssignActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const UnassignedAssignSelect = styled.select`
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  }
+`;
+
+const LoadingMessage = styled.p`
+  text-align: center;
+  color: #6b7280;
+  font-size: 1rem;
+`;
+
+const ErrorMessage = styled.p`
+  text-align: center;
+  color: #ef4444;
+  font-size: 1rem;
+  margin-bottom: 1rem;
 `;
 
 export default TableManagement;
