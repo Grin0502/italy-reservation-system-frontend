@@ -6,7 +6,7 @@ import { useAuth } from './AuthContext';
 export interface Table {
   _id: string;
   number: string;
-  zoneId: string;
+  zoneId: string | { _id: string; name: string; color: string };
   capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   position?: { x: number; y: number };
@@ -142,7 +142,13 @@ export const TableZoneProvider: React.FC<{ children: ReactNode }> = ({ children 
       await zonesAPI.delete(zoneId);
       setZones(prev => prev.filter(zone => zone._id !== zoneId));
       // Also remove tables in this zone
-      setTables(prev => prev.filter(table => table.zoneId !== zoneId));
+      setTables(prev => prev.filter(table => {
+        // Handle both populated zoneId (object) and non-populated zoneId (string)
+        if (typeof table.zoneId === 'object' && table.zoneId !== null) {
+          return table.zoneId._id !== zoneId;
+        }
+        return table.zoneId !== zoneId;
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove zone');
       throw err;
@@ -164,7 +170,13 @@ export const TableZoneProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   const getTablesByZone = (zoneId: string) => {
-    return tables.filter(table => table.zoneId === zoneId);
+    return tables.filter(table => {
+      // Handle both populated zoneId (object) and non-populated zoneId (string)
+      if (typeof table.zoneId === 'object' && table.zoneId !== null) {
+        return table.zoneId._id === zoneId;
+      }
+      return table.zoneId === zoneId;
+    });
   };
 
   const getZoneById = (zoneId: string) => {

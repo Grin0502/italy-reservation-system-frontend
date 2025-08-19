@@ -67,9 +67,16 @@ const TableManagement: React.FC = () => {
 
   const handleEdit = (table: Table) => {
     setEditingTable(table);
+    // Handle both populated zoneId (object) and non-populated zoneId (string)
+    let zoneId: string;
+    if (typeof table.zoneId === 'object' && table.zoneId !== null) {
+      zoneId = table.zoneId._id;
+    } else {
+      zoneId = table.zoneId as string;
+    }
     setFormData({
       number: table.number,
-      zoneId: table.zoneId,
+      zoneId: zoneId,
       capacity: table.capacity,
       status: table.status
     });
@@ -107,7 +114,13 @@ const TableManagement: React.FC = () => {
   };
 
   const getUnassignedTables = () => {
-    return tables.filter(table => !table.zoneId || table.zoneId === '');
+    return tables.filter(table => {
+      // Handle both populated zoneId (object) and non-populated zoneId (string)
+      if (typeof table.zoneId === 'object' && table.zoneId !== null) {
+        return false; // If it's an object, it's assigned to a zone
+      }
+      return !table.zoneId || (table.zoneId as string) === '';
+    });
   };
 
   const assignTableToZone = async (tableId: string, zoneId: string) => {
@@ -306,7 +319,17 @@ const TableManagement: React.FC = () => {
 
       <TableGrid>
         {tables.map(table => {
-          const zone = zones.find(z => z._id === table.zoneId);
+          // Handle both populated zoneId (object) and non-populated zoneId (string)
+          let zoneId: string;
+          let zoneName: string;
+          if (typeof table.zoneId === 'object' && table.zoneId !== null) {
+            zoneId = table.zoneId._id;
+            zoneName = table.zoneId.name;
+          } else {
+            zoneId = table.zoneId as string;
+            const zone = zones.find(z => z._id === zoneId);
+            zoneName = zone?.name || 'Unassigned';
+          }
           return (
             <TableCard key={table._id}>
               <TableHeader>
@@ -318,7 +341,7 @@ const TableManagement: React.FC = () => {
               <TableInfo>
                 <InfoItem>
                   <Label>Zone:</Label>
-                  <span>{zone?.name || 'Unassigned'}</span>
+                  <span>{zoneName}</span>
                 </InfoItem>
                 <InfoItem>
                   <Label>Capacity:</Label>
