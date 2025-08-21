@@ -777,16 +777,6 @@ const StatusBadge = styled.span<{ status: string }>`
   text-transform: capitalize;
 `;
 
-const AccessDenied = styled.div`
-  text-align: center;
-  padding: 2rem;
-  color: #6b7280;
-  
-  h3 {
-    margin-bottom: 0.5rem;
-  }
-`;
-
 const UnassignedSection = styled.div`
   background: #f9fafb;
   border: 1px solid #e5e7eb;

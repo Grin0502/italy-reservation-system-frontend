@@ -12,7 +12,11 @@ const RestaurantInfoSettings: React.FC = () => {
   const [formData, setFormData] = useState(restaurantInfo);
 
   // Calculate total capacity from all tables
-  const totalCapacity = tables.reduce((sum, table) => sum + table.capacity, 0);
+  const totalCapacity = tables.reduce((sum, table) => {
+    const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+    const zone = useTableZone().zones.find(z => z._id === zoneId);
+    return sum + (zone?.seatsPerTable || 0);
+  }, 0);
 
   const canEdit = hasPermission('manage_restaurant_info');
 

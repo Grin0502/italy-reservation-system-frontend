@@ -44,7 +44,10 @@ const DynamicStatistics: React.FC = () => {
     if (selectedZone === 'all') {
       return tables;
     }
-    return tables.filter(table => table.zoneId === selectedZone);
+    return tables.filter(table => {
+      const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+      return zoneId === selectedZone;
+    });
   }, [tables, selectedZone]);
 
   // Calculate real-time statistics based on filtered tables
@@ -54,7 +57,11 @@ const DynamicStatistics: React.FC = () => {
     const occupiedTables = filteredTables.filter(t => t.status === 'occupied').length;
     const reservedTables = filteredTables.filter(t => t.status === 'reserved').length;
     const maintenanceTables = filteredTables.filter(t => t.status === 'maintenance').length;
-    const totalCapacity = filteredTables.reduce((sum, table) => sum + table.capacity, 0);
+    const totalCapacity = filteredTables.reduce((sum, table) => {
+      const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+      const zone = zones.find(z => z._id === zoneId);
+      return sum + (zone?.seatsPerTable || 0);
+    }, 0);
     const occupancyRate = totalTables > 0 ? ((occupiedTables + reservedTables) / totalTables * 100).toFixed(1) : '0';
 
     return {
@@ -73,7 +80,10 @@ const DynamicStatistics: React.FC = () => {
     if (selectedZone === 'all') {
       // Show all zones
       return zones.map(zone => {
-        const zoneTables = tables.filter(t => t.zoneId === zone.id);
+        const zoneTables = tables.filter(t => {
+          const tableZoneId = typeof t.zoneId === 'object' ? t.zoneId._id : t.zoneId;
+          return tableZoneId === zone._id;
+        });
         const available = zoneTables.filter(t => t.status === 'available').length;
         const occupied = zoneTables.filter(t => t.status === 'occupied').length;
         const reserved = zoneTables.filter(t => t.status === 'reserved').length;
@@ -90,7 +100,7 @@ const DynamicStatistics: React.FC = () => {
       });
     } else {
       // Show only selected zone
-      const zone = zones.find(z => z.id === selectedZone);
+      const zone = zones.find(z => z._id === selectedZone);
       if (!zone) return [];
       
       const available = filteredTables.filter(t => t.status === 'available').length;
@@ -137,21 +147,31 @@ const DynamicStatistics: React.FC = () => {
   const capacityDistributionData = useMemo(() => {
     const capacityCounts: { [key: number]: number } = {};
     filteredTables.forEach(table => {
-      capacityCounts[table.capacity] = (capacityCounts[table.capacity] || 0) + 1;
+      const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+      const zone = zones.find(z => z._id === zoneId);
+      const capacity = zone?.seatsPerTable || 0;
+      capacityCounts[capacity] = (capacityCounts[capacity] || 0) + 1;
     });
 
     return Object.entries(capacityCounts).map(([capacity, count]) => ({
       capacity: `${capacity} seats`,
       count
     }));
-  }, [filteredTables]);
+  }, [filteredTables, zones]);
 
   const zonePerformanceData = useMemo(() => {
     if (selectedZone === 'all') {
       // Show all zones
       return zones.map(zone => {
-        const zoneTables = tables.filter(t => t.zoneId === zone.id);
-        const totalCapacity = zoneTables.reduce((sum, table) => sum + table.capacity, 0);
+        const zoneTables = tables.filter(t => {
+          const tableZoneId = typeof t.zoneId === 'object' ? t.zoneId._id : t.zoneId;
+          return tableZoneId === zone._id;
+        });
+        const totalCapacity = zoneTables.reduce((sum, table) => {
+          const tableZoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+          const tableZone = zones.find(z => z._id === tableZoneId);
+          return sum + (tableZone?.seatsPerTable || 0);
+        }, 0);
         const occupancyRate = zoneTables.length > 0 
           ? ((zoneTables.filter(t => t.status === 'occupied' || t.status === 'reserved').length / zoneTables.length) * 100).toFixed(1)
           : 0;
@@ -165,10 +185,14 @@ const DynamicStatistics: React.FC = () => {
       });
     } else {
       // Show only selected zone
-      const zone = zones.find(z => z.id === selectedZone);
+      const zone = zones.find(z => z._id === selectedZone);
       if (!zone) return [];
       
-      const totalCapacity = filteredTables.reduce((sum, table) => sum + table.capacity, 0);
+      const totalCapacity = filteredTables.reduce((sum, table) => {
+        const tableZoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+        const tableZone = zones.find(z => z._id === tableZoneId);
+        return sum + (tableZone?.seatsPerTable || 0);
+      }, 0);
       const occupancyRate = filteredTables.length > 0 
         ? ((filteredTables.filter(t => t.status === 'occupied' || t.status === 'reserved').length / filteredTables.length) * 100).toFixed(1)
         : 0;
@@ -287,7 +311,7 @@ const DynamicStatistics: React.FC = () => {
             >
               <option value="all">All Zones</option>
               {zones.map(zone => (
-                <option key={zone.id} value={zone.id}>
+                <option key={zone._id} value={zone._id}>
                   {zone.name}
                 </option>
               ))}

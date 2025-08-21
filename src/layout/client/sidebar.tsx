@@ -8,11 +8,11 @@ import {
   AiOutlineClockCircle,
   AiOutlineAppstore
 } from "react-icons/ai";
-import { useAuth } from "../../contexts/AuthContext";
+import { useUser } from "../../contexts/UserContext";
 
 const Sidebar = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { hasPermission } = useUser();
 
   const navItems = [
     { path: "/", label: "Home", icon: AiOutlineHome, permission: null }, // Always visible
@@ -26,8 +26,7 @@ const Sidebar = () => {
   // Filter navigation items based on user permissions
   const filteredNavItems = navItems.filter(item => {
     if (!item.permission) return true; // Always show items without permission requirement
-    if (!user || !user.permissions) return false;
-    return user.permissions.includes(item.permission);
+    return hasPermission(item.permission);
   });
 
   return (

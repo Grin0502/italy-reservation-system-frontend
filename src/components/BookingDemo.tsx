@@ -93,11 +93,18 @@ const BookingDemo: React.FC = () => {
               <Label>Select Table:</Label>
               <Select value={selectedTable} onChange={(e) => setSelectedTable(e.target.value)}>
                 <option value="">Choose a table</option>
-                {tables.map(table => (
-                  <option key={table.id} value={table.id}>
-                    Table {table.number} ({table.capacity} seats)
-                  </option>
-                ))}
+                {tables.map(table => {
+                  // Get zone info for capacity
+                  const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+                  const zone = useTableZone().zones.find(z => z._id === zoneId);
+                  const capacity = zone?.seatsPerTable || 0;
+                  
+                  return (
+                    <option key={table._id} value={table._id}>
+                      Table {table.number} ({capacity} seats)
+                    </option>
+                  );
+                })}
               </Select>
             </FormGroup>
 
@@ -139,11 +146,16 @@ const BookingDemo: React.FC = () => {
       <BookingsSection>
         <h4>Current Bookings & Availability</h4>
         {tables.map(table => {
-          const availability = getTableAvailability(table.id);
+          const availability = getTableAvailability(table._id);
+          // Get zone info for capacity
+          const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
+          const zone = useTableZone().zones.find(z => z._id === zoneId);
+          const capacity = zone?.seatsPerTable || 0;
+          
           return (
-            <TableCard key={table.id}>
+            <TableCard key={table._id}>
               <TableHeader>
-                <h5>Table {table.number} ({table.capacity} seats)</h5>
+                <h5>Table {table.number} ({capacity} seats)</h5>
               </TableHeader>
               
               {availability.length > 0 ? (

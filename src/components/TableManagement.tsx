@@ -631,16 +631,6 @@ const DeleteButton = styled.button`
   }
 `;
 
-const AccessDenied = styled.div`
-  text-align: center;
-  padding: 2rem;
-  color: #6b7280;
-  
-  h3 {
-    margin-bottom: 0.5rem;
-  }
-`;
-
 const UnassignedSection = styled.div`
   margin-bottom: 1.5rem;
   padding: 1rem;
