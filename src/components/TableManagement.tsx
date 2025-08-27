@@ -9,7 +9,6 @@ import { useUser } from '../contexts/UserContext';
 interface TableFormData {
   number: string;
   zoneId: string;
-  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   isActive?: boolean;
 }
 
@@ -23,8 +22,7 @@ const TableManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<TableFormData>({
     number: '',
-    zoneId: '',
-    status: 'available'
+    zoneId: ''
   });
 
   const canManageTables = hasPermission('manage_tables');
@@ -39,7 +37,7 @@ const TableManagement: React.FC = () => {
       } else {
         await addTable({ ...formData, isActive: true });
       }
-      setFormData({ number: '', zoneId: '', status: 'available' });
+      setFormData({ number: '', zoneId: '' });
       setShowAddForm(false);
     } catch (err) {
       console.error('Error saving table:', err);
@@ -74,15 +72,14 @@ const TableManagement: React.FC = () => {
     }
     setFormData({
       number: table.number,
-      zoneId: zoneId,
-      status: table.status
+      zoneId: zoneId
     });
   };
 
   const handleCancel = () => {
     setEditingTable(null);
     setShowAddForm(false);
-    setFormData({ number: '', zoneId: '', status: 'available' });
+    setFormData({ number: '', zoneId: '' });
   };
 
   const handleMoveCancel = () => {
@@ -97,16 +94,6 @@ const TableManagement: React.FC = () => {
       } catch (err) {
         console.error('Error deleting table:', err);
       }
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return '#10b981';
-      case 'occupied': return '#ef4444';
-      case 'reserved': return '#f59e0b';
-      case 'maintenance': return '#6b7280';
-      default: return '#6b7280';
     }
   };
 
@@ -174,9 +161,6 @@ const TableManagement: React.FC = () => {
                 <TableInfo>
                   <TableNumber>{table.number}</TableNumber>
                   <span>Unassigned</span>
-                  <StatusBadge color={getStatusColor(table.status)}>
-                    {table.status}
-                  </StatusBadge>
                 </TableInfo>
                 <UnassignedAssignActions>
                   <UnassignedAssignSelect
@@ -234,22 +218,6 @@ const TableManagement: React.FC = () => {
                   ))}
                 </Select>
                 <FormNote>Note: Table capacity is managed at the zone level. Select a zone to inherit its seating configuration.</FormNote>
-              </FormGroup>
-              
-
-              
-              <FormGroup>
-                <Label>Status</Label>
-                <Select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  required
-                >
-                  <option value="available">Available</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="maintenance">Maintenance</option>
-                </Select>
               </FormGroup>
               
               <ButtonGroup>
@@ -324,9 +292,6 @@ const TableManagement: React.FC = () => {
             <TableCard key={table._id}>
               <TableHeader>
                 <TableNumber>{table.number}</TableNumber>
-                <StatusBadge color={getStatusColor(table.status)}>
-                  {table.status}
-                </StatusBadge>
               </TableHeader>
               <TableInfo>
                 <InfoItem>
@@ -554,16 +519,6 @@ const TableNumber = styled.div`
   font-weight: 600;
   font-size: 1.125rem;
   color: #1e293b;
-`;
-
-const StatusBadge = styled.div<{ color: string }>`
-  background: ${props => props.color};
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: capitalize;
 `;
 
 const TableInfo = styled.div`

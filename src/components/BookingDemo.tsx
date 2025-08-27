@@ -144,7 +144,7 @@ const BookingDemo: React.FC = () => {
       </DemoSection>
 
       <BookingsSection>
-        <h4>Current Bookings & Availability</h4>
+        <h4>Bookings & Availability</h4>
         {tables.map(table => {
           const availability = getTableAvailability(table._id);
           // Get zone info for capacity

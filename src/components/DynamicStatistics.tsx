@@ -33,9 +33,8 @@ const DynamicStatistics: React.FC = () => {
   const [showCustomization, setShowCustomization] = useState(false);
   const [selectedZone, setSelectedZone] = useState('all');
   const [chartConfigs, setChartConfigs] = useState<ChartConfig[]>([
-    { id: '1', type: 'bar', title: 'Zone Occupancy', description: 'Current table status by zone', dataKey: 'zone', fullWidth: false, enabled: true },
-    { id: '2', type: 'pie', title: 'Table Status Distribution', description: 'Overall table status breakdown', dataKey: 'status', fullWidth: false, enabled: true },
-    { id: '3', type: 'bar', title: 'Capacity Distribution', description: 'Table capacity breakdown', dataKey: 'capacity', fullWidth: false, enabled: true },
+    { id: '1', type: 'bar', title: 'Zone Tables', description: 'Number of tables by zone', dataKey: 'zone', fullWidth: false, enabled: true },
+    { id: '2', type: 'bar', title: 'Capacity Distribution', description: 'Table capacity breakdown', dataKey: 'capacity', fullWidth: false, enabled: true },
     { id: '4', type: 'line', title: 'Zone Performance', description: 'Zone comparison metrics', dataKey: 'performance', fullWidth: true, enabled: true },
   ]);
 
@@ -53,30 +52,20 @@ const DynamicStatistics: React.FC = () => {
   // Calculate real-time statistics based on filtered tables
   const statistics = useMemo(() => {
     const totalTables = filteredTables.length;
-    const availableTables = filteredTables.filter(t => t.status === 'available').length;
-    const occupiedTables = filteredTables.filter(t => t.status === 'occupied').length;
-    const reservedTables = filteredTables.filter(t => t.status === 'reserved').length;
-    const maintenanceTables = filteredTables.filter(t => t.status === 'maintenance').length;
     const totalCapacity = filteredTables.reduce((sum, table) => {
       const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
       const zone = zones.find(z => z._id === zoneId);
       return sum + (zone?.seatsPerTable || 0);
     }, 0);
-    const occupancyRate = totalTables > 0 ? ((occupiedTables + reservedTables) / totalTables * 100).toFixed(1) : '0';
 
     return {
       totalTables,
-      availableTables,
-      occupiedTables,
-      reservedTables,
-      maintenanceTables,
-      totalCapacity,
-      occupancyRate
+      totalCapacity
     };
-  }, [filteredTables]);
+  }, [filteredTables, zones]);
 
   // Generate chart data based on filtered tables
-  const zoneOccupancyData = useMemo(() => {
+  const zoneTableData = useMemo(() => {
     if (selectedZone === 'all') {
       // Show all zones
       return zones.map(zone => {
@@ -84,17 +73,9 @@ const DynamicStatistics: React.FC = () => {
           const tableZoneId = typeof t.zoneId === 'object' ? t.zoneId._id : t.zoneId;
           return tableZoneId === zone._id;
         });
-        const available = zoneTables.filter(t => t.status === 'available').length;
-        const occupied = zoneTables.filter(t => t.status === 'occupied').length;
-        const reserved = zoneTables.filter(t => t.status === 'reserved').length;
-        const maintenance = zoneTables.filter(t => t.status === 'maintenance').length;
         
         return {
           zone: zone.name,
-          available,
-          occupied,
-          reserved,
-          maintenance,
           total: zoneTables.length
         };
       });
@@ -103,46 +84,14 @@ const DynamicStatistics: React.FC = () => {
       const zone = zones.find(z => z._id === selectedZone);
       if (!zone) return [];
       
-      const available = filteredTables.filter(t => t.status === 'available').length;
-      const occupied = filteredTables.filter(t => t.status === 'occupied').length;
-      const reserved = filteredTables.filter(t => t.status === 'reserved').length;
-      const maintenance = filteredTables.filter(t => t.status === 'maintenance').length;
-      
       return [{
         zone: zone.name,
-        available,
-        occupied,
-        reserved,
-        maintenance,
         total: filteredTables.length
       }];
     }
   }, [tables, zones, selectedZone, filteredTables]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return '#10b981';
-      case 'occupied': return '#ef4444';
-      case 'reserved': return '#f59e0b';
-      case 'maintenance': return '#6b7280';
-      default: return '#6b7280';
-    }
-  };
 
-  const statusDistributionData = useMemo(() => {
-    const statusCounts = {
-      available: filteredTables.filter(t => t.status === 'available').length,
-      occupied: filteredTables.filter(t => t.status === 'occupied').length,
-      reserved: filteredTables.filter(t => t.status === 'reserved').length,
-      maintenance: filteredTables.filter(t => t.status === 'maintenance').length
-    };
-
-    return Object.entries(statusCounts).map(([status, count]) => ({
-      name: status.charAt(0).toUpperCase() + status.slice(1),
-      value: count,
-      color: getStatusColor(status)
-    }));
-  }, [filteredTables]);
 
   const capacityDistributionData = useMemo(() => {
     const capacityCounts: { [key: number]: number } = {};
@@ -172,15 +121,11 @@ const DynamicStatistics: React.FC = () => {
           const tableZone = zones.find(z => z._id === tableZoneId);
           return sum + (tableZone?.seatsPerTable || 0);
         }, 0);
-        const occupancyRate = zoneTables.length > 0 
-          ? ((zoneTables.filter(t => t.status === 'occupied' || t.status === 'reserved').length / zoneTables.length) * 100).toFixed(1)
-          : 0;
         
         return {
           zone: zone.name,
           tables: zoneTables.length,
-          capacity: totalCapacity,
-          occupancyRate: parseFloat(occupancyRate.toString())
+          capacity: totalCapacity
         };
       });
     } else {
@@ -193,23 +138,17 @@ const DynamicStatistics: React.FC = () => {
         const tableZone = zones.find(z => z._id === tableZoneId);
         return sum + (tableZone?.seatsPerTable || 0);
       }, 0);
-      const occupancyRate = filteredTables.length > 0 
-        ? ((filteredTables.filter(t => t.status === 'occupied' || t.status === 'reserved').length / filteredTables.length) * 100).toFixed(1)
-        : 0;
       
       return [{
         zone: zone.name,
         tables: filteredTables.length,
-        capacity: totalCapacity,
-        occupancyRate: parseFloat(occupancyRate.toString())
+        capacity: totalCapacity
       }];
     }
   }, [tables, zones, selectedZone, filteredTables]);
 
   const quickStats = [
     { label: 'Total Tables', value: statistics.totalTables.toString(), change: '', positive: true },
-    { label: 'Available Tables', value: statistics.availableTables.toString(), change: '', positive: true },
-    { label: 'Occupancy Rate', value: `${statistics.occupancyRate}%`, change: '', positive: true },
     { label: 'Total Capacity', value: `${statistics.totalCapacity} seats`, change: '', positive: true },
   ];
 
@@ -221,15 +160,12 @@ const DynamicStatistics: React.FC = () => {
         if (config.dataKey === 'zone') {
           return (
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={zoneOccupancyData}>
+              <BarChart data={zoneTableData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="zone" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="available" fill="#10b981" name="Available" />
-                <Bar dataKey="occupied" fill="#ef4444" name="Occupied" />
-                <Bar dataKey="reserved" fill="#f59e0b" name="Reserved" />
-                <Bar dataKey="maintenance" fill="#6b7280" name="Maintenance" />
+                <Bar dataKey="total" fill="#06b6d4" name="Tables" />
               </BarChart>
             </ResponsiveContainer>
           );
@@ -248,31 +184,7 @@ const DynamicStatistics: React.FC = () => {
         }
         break;
 
-      case 'pie':
-        if (config.dataKey === 'status') {
-          return (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${((percent ? percent : 0) * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          );
-        }
-        break;
+
 
       case 'line':
         if (config.dataKey === 'performance') {
@@ -281,11 +193,9 @@ const DynamicStatistics: React.FC = () => {
               <LineChart data={zonePerformanceData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="zone" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
+                <YAxis />
                 <Tooltip />
-                <Line yAxisId="left" type="monotone" dataKey="tables" stroke="#06b6d4" name="Tables" />
-                <Line yAxisId="right" type="monotone" dataKey="occupancyRate" stroke="#10b981" name="Occupancy %" />
+                <Line type="monotone" dataKey="tables" stroke="#06b6d4" name="Tables" />
               </LineChart>
             </ResponsiveContainer>
           );

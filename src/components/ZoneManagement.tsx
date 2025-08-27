@@ -16,7 +16,6 @@ interface ZoneFormData {
 
 interface TableFormData {
   number: string;
-  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
 }
 
 const ZoneManagement: React.FC = () => {
@@ -33,8 +32,7 @@ const ZoneManagement: React.FC = () => {
     seatsPerTable: 4
   });
   const [tableFormData, setTableFormData] = useState<TableFormData>({
-    number: '',
-    status: 'available'
+    number: ''
   });
 
   const canManageZones = hasPermission('manage_zones');
@@ -68,7 +66,7 @@ const ZoneManagement: React.FC = () => {
           zoneId: showAddTableForm,
           isActive: true
         });
-        setTableFormData({ number: '', status: 'available' });
+        setTableFormData({ number: '' });
         setShowAddTableForm(null);
       }
     } catch (err) {
@@ -96,7 +94,7 @@ const ZoneManagement: React.FC = () => {
 
   const handleTableCancel = () => {
     setShowAddTableForm(null);
-    setTableFormData({ number: '', status: 'available' });
+    setTableFormData({ number: '' });
   };
 
   const handleDelete = async (zoneId: string) => {
@@ -117,11 +115,9 @@ const ZoneManagement: React.FC = () => {
     const zoneTables = getTablesByZone(zoneId);
     const zone = zones.find(z => z._id === zoneId);
     const totalTables = zoneTables.length;
-    const availableTables = zoneTables.filter(t => t.status === 'available').length;
-    const occupiedTables = zoneTables.filter(t => t.status === 'occupied').length;
     const totalCapacity = zone ? zone.seatsPerTable * totalTables : 0;
     
-    return { totalTables, availableTables, occupiedTables, totalCapacity };
+    return { totalTables, totalCapacity };
   };
 
   const getUnassignedTables = () => {
@@ -259,19 +255,7 @@ const ZoneManagement: React.FC = () => {
               
 
               
-              <FormGroup>
-                <Label>Status</Label>
-                <Select
-                  value={tableFormData.status}
-                  onChange={(e) => setTableFormData({ ...tableFormData, status: e.target.value as any })}
-                  required
-                >
-                  <option value="available">Available</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="maintenance">Maintenance</option>
-                </Select>
-              </FormGroup>
+
               
                              <ButtonGroup>
                  <CancelButton type="button" onClick={handleTableCancel} disabled={isSubmitting}>
@@ -299,9 +283,6 @@ const ZoneManagement: React.FC = () => {
                  <TableInfo>
                    <TableNumber>{table.number}</TableNumber>
                    <TableCapacity>Unassigned</TableCapacity>
-                   <StatusBadge status={table.status}>
-                     {table.status}
-                   </StatusBadge>
                  </TableInfo>
                  <AssignActions>
                    <AssignSelect
@@ -361,14 +342,6 @@ const ZoneManagement: React.FC = () => {
                   <StatValue>{stats.totalTables}</StatValue>
                 </StatItem>
                 <StatItem>
-                  <StatLabel>Available</StatLabel>
-                  <StatValue available>{stats.availableTables}</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Occupied</StatLabel>
-                  <StatValue occupied>{stats.occupiedTables}</StatValue>
-                </StatItem>
-                <StatItem>
                   <StatLabel>Seats per Table</StatLabel>
                   <StatValue>{zone.seatsPerTable} seats</StatValue>
                 </StatItem>
@@ -386,9 +359,6 @@ const ZoneManagement: React.FC = () => {
                        <TableItem key={table._id}>
                         <span>{table.number}</span>
                         <span>{zone.seatsPerTable} seats</span>
-                        <StatusBadge status={table.status}>
-                          {table.status}
-                        </StatusBadge>
                       </TableItem>
                     ))}
                   </TableList>
@@ -759,23 +729,7 @@ const TableItem = styled.div`
   }
 `;
 
-const StatusBadge = styled.span<{ status: string }>`
-  background: ${props => {
-    switch (props.status) {
-      case 'available': return '#10b981';
-      case 'occupied': return '#ef4444';
-      case 'reserved': return '#f59e0b';
-      case 'maintenance': return '#6b7280';
-      default: return '#6b7280';
-    }
-  }};
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.625rem;
-  font-weight: 500;
-  text-transform: capitalize;
-`;
+
 
 const UnassignedSection = styled.div`
   background: #f9fafb;
