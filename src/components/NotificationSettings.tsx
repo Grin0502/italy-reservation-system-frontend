@@ -1,20 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import { useUser } from '../contexts/UserContext';
 
 const NotificationSettings: React.FC = () => {
-  const { notificationSettings, updateNotificationSettings } = useRestaurant();
+  const { notificationSettings, updateNotificationSettings, loading, error } = useRestaurant();
   const { hasPermission } = useUser();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   const canEdit = hasPermission('manage_notifications');
 
-  const handleToggle = (setting: keyof typeof notificationSettings) => {
-    if (!canEdit) return;
-    updateNotificationSettings({
-      [setting]: !notificationSettings[setting]
-    });
+  const handleToggle = async (setting: keyof typeof notificationSettings) => {
+    if (!canEdit || isUpdating) return;
+    
+    try {
+      setIsUpdating(true);
+      setUpdateError(null);
+      setUpdateSuccess(false);
+      
+      await updateNotificationSettings({
+        [setting]: !notificationSettings[setting]
+      });
+      
+      setUpdateSuccess(true);
+      // Clear success message after 2 seconds
+      setTimeout(() => setUpdateSuccess(false), 2000);
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : 'Failed to update notification settings');
+    } finally {
+      setIsUpdating(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <Container>
+        <LoadingMessage>Loading notification settings...</LoadingMessage>
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -25,6 +51,18 @@ const NotificationSettings: React.FC = () => {
         </div>
       </SectionHeader>
 
+      {(error || updateError) && (
+        <ErrorMessage>
+          {error || updateError}
+        </ErrorMessage>
+      )}
+
+      {updateSuccess && (
+        <SuccessMessage>
+          Notification settings updated successfully!
+        </SuccessMessage>
+      )}
+
       <NotificationOptions>
         <NotificationOption>
           <div>
@@ -34,7 +72,7 @@ const NotificationSettings: React.FC = () => {
           <ToggleSwitch
             checked={notificationSettings.emailNotifications}
             onChange={() => handleToggle('emailNotifications')}
-            disabled={!canEdit}
+            disabled={!canEdit || isUpdating}
           />
         </NotificationOption>
         
@@ -46,7 +84,7 @@ const NotificationSettings: React.FC = () => {
           <ToggleSwitch
             checked={notificationSettings.smsNotifications}
             onChange={() => handleToggle('smsNotifications')}
-            disabled={!canEdit}
+            disabled={!canEdit || isUpdating}
           />
         </NotificationOption>
         
@@ -58,10 +96,16 @@ const NotificationSettings: React.FC = () => {
           <ToggleSwitch
             checked={notificationSettings.pushNotifications}
             onChange={() => handleToggle('pushNotifications')}
-            disabled={!canEdit}
+            disabled={!canEdit || isUpdating}
           />
         </NotificationOption>
       </NotificationOptions>
+
+      {isUpdating && (
+        <UpdatingMessage>
+          Updating notification settings...
+        </UpdatingMessage>
+      )}
 
       {!canEdit && (
         <AccessNote>
@@ -78,6 +122,41 @@ const Container = styled.div`
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+`;
+
+const LoadingMessage = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 1.1rem;
+`;
+
+const ErrorMessage = styled.div`
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+`;
+
+const SuccessMessage = styled.div`
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #16a34a;
+  font-size: 0.875rem;
+`;
+
+const UpdatingMessage = styled.div`
+  text-align: center;
+  padding: 1rem;
+  color: #06b6d4;
+  font-size: 0.875rem;
+  font-style: italic;
 `;
 
 const SectionHeader = styled.div`

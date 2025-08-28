@@ -5,33 +5,60 @@ import { useUser } from '../contexts/UserContext';
 import { formatTimeMargin } from '../utils/bookingUtils';
 
 const BookingRulesSettings: React.FC = () => {
-  const { bookingRules, updateBookingRules } = useRestaurant();
+  const { bookingRules, updateBookingRules, loading, error } = useRestaurant();
   const { hasPermission } = useUser();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState(bookingRules);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const canEdit = hasPermission('manage_booking_rules');
 
   const handleEdit = () => {
     setIsEditing(true);
     setFormData(bookingRules);
+    setSaveError(null);
+    setSaveSuccess(false);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setFormData(bookingRules);
+    setSaveError(null);
+    setSaveSuccess(false);
   };
 
-  const handleSave = () => {
-    updateBookingRules(formData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      setSaveSuccess(false);
+      
+      await updateBookingRules(formData);
+      setIsEditing(false);
+      setSaveSuccess(true);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save booking rules');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleInputChange = (field: keyof typeof bookingRules, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-
+  if (loading) {
+    return (
+      <Container>
+        <LoadingMessage>Loading booking rules...</LoadingMessage>
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -44,8 +71,10 @@ const BookingRulesSettings: React.FC = () => {
           <ActionButtons>
             {isEditing ? (
               <>
-                <CancelButton onClick={handleCancel}>Cancel</CancelButton>
-                <SaveButton onClick={handleSave}>Save Changes</SaveButton>
+                <CancelButton onClick={handleCancel} disabled={isSaving}>Cancel</CancelButton>
+                <SaveButton onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </SaveButton>
               </>
             ) : (
               <EditButton onClick={handleEdit}>Edit Rules</EditButton>
@@ -53,6 +82,18 @@ const BookingRulesSettings: React.FC = () => {
           </ActionButtons>
         )}
       </SectionHeader>
+
+      {(error || saveError) && (
+        <ErrorMessage>
+          {error || saveError}
+        </ErrorMessage>
+      )}
+
+      {saveSuccess && (
+        <SuccessMessage>
+          Booking rules updated successfully!
+        </SuccessMessage>
+      )}
 
       <RulesGrid>
         <RuleCard>
@@ -64,6 +105,7 @@ const BookingRulesSettings: React.FC = () => {
               onChange={(e) => handleInputChange('maxPartySize', parseInt(e.target.value))}
               min="1"
               max="50"
+              disabled={isSaving}
             />
           ) : (
             <RuleValue>{bookingRules.maxPartySize} people</RuleValue>
@@ -79,6 +121,7 @@ const BookingRulesSettings: React.FC = () => {
               onChange={(e) => handleInputChange('advanceBookingLimit', parseInt(e.target.value))}
               min="1"
               max="365"
+              disabled={isSaving}
             />
           ) : (
             <RuleValue>{bookingRules.advanceBookingLimit} days</RuleValue>
@@ -94,6 +137,7 @@ const BookingRulesSettings: React.FC = () => {
               onChange={(e) => handleInputChange('cancellationPolicy', parseInt(e.target.value))}
               min="0"
               max="72"
+              disabled={isSaving}
             />
           ) : (
             <RuleValue>{bookingRules.cancellationPolicy} hours</RuleValue>
@@ -111,6 +155,7 @@ const BookingRulesSettings: React.FC = () => {
                 min="15"
                 max="240"
                 step="15"
+                disabled={isSaving}
               />
               <TimeUnit>minutes</TimeUnit>
             </TimeMarginInput>
@@ -130,6 +175,7 @@ const BookingRulesSettings: React.FC = () => {
             <ToggleSwitch
               checked={formData.depositRequired}
               onChange={(e) => handleInputChange('depositRequired', e.target.checked)}
+              disabled={isSaving}
             />
           ) : (
             <RuleValue>{bookingRules.depositRequired ? 'Yes' : 'No'}</RuleValue>
@@ -146,6 +192,7 @@ const BookingRulesSettings: React.FC = () => {
                 onChange={(e) => handleInputChange('depositAmount', parseFloat(e.target.value))}
                 min="0"
                 step="0.01"
+                disabled={isSaving}
               />
             ) : (
               <RuleValue>€{bookingRules.depositAmount || 0}</RuleValue>
@@ -181,6 +228,33 @@ const Container = styled.div`
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+`;
+
+const LoadingMessage = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 1.1rem;
+`;
+
+const ErrorMessage = styled.div`
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+`;
+
+const SuccessMessage = styled.div`
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #16a34a;
+  font-size: 0.875rem;
 `;
 
 const SectionHeader = styled.div`

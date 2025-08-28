@@ -205,7 +205,7 @@ export const restaurantAPI = {
   },
 
   updateInfo: async (restaurantData: any) => {
-    return apiRequest('/restaurant/info', {
+    return apiRequest('/restaurant', {
       method: 'PUT',
       body: JSON.stringify(restaurantData)
     });
@@ -219,6 +219,20 @@ export const restaurantAPI = {
     return apiRequest('/restaurant/settings', {
       method: 'PUT',
       body: JSON.stringify(settingsData)
+    });
+  },
+
+  updateNotifications: async (notificationData: any) => {
+    return apiRequest('/restaurant/notifications', {
+      method: 'PUT',
+      body: JSON.stringify(notificationData)
+    });
+  },
+
+  updateBookingRules: async (bookingRulesData: any) => {
+    return apiRequest('/restaurant/booking-rules', {
+      method: 'PUT',
+      body: JSON.stringify(bookingRulesData)
     });
   }
 };
