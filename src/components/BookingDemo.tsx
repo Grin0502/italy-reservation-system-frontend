@@ -2,280 +2,288 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import { useTableZone } from '../contexts/TableZoneContext';
-import { 
-  calculateNextAvailableTime, 
-  isTableAvailable, 
-  formatTimeMargin,
-  type TableBooking 
-} from '../utils/bookingUtils';
+import api from '../services/api';
+
+interface BookingFormData {
+  guestCount: number;
+  date: string;
+  time: string;
+  phoneNumber: string;
+  username: string;
+}
+
+interface AvailableTable {
+  tableId: string;
+  tableNumber: number;
+  capacity: number;
+  zoneName: string;
+}
 
 const BookingDemo: React.FC = () => {
   const { bookingRules, restaurantInfo } = useRestaurant();
   const { tables } = useTableZone();
+  
+  const [formData, setFormData] = useState<BookingFormData>({
+    guestCount: 2,
+    date: '',
+    time: '',
+    phoneNumber: '',
+    username: ''
+  });
+  
+  const [availableTables, setAvailableTables] = useState<AvailableTable[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedTime, setSelectedTime] = useState<string>('');
-  const [bookingDuration, setBookingDuration] = useState<number>(60);
-  const [existingBookings, setExistingBookings] = useState<TableBooking[]>([
-    {
-      id: '1',
-      tableId: '1',
-      startTime: new Date('2024-01-15T18:00:00'),
-      endTime: new Date('2024-01-15T20:00:00'),
-      customerName: 'John Doe',
-      partySize: 4
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleInputChange = (field: keyof BookingFormData, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setMessage(null);
+  };
+
+  const checkAvailability = async () => {
+    if (!formData.date || !formData.time || !formData.phoneNumber || !formData.username) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields' });
+      return;
     }
-  ]);
 
-  const handleAddBooking = () => {
-    if (!selectedTable || !selectedDate || !selectedTime) return;
+    setIsCheckingAvailability(true);
+    setMessage(null);
 
-    const startTime = new Date(`${selectedDate}T${selectedTime}:00`);
-    const endTime = new Date(startTime);
-    endTime.setMinutes(endTime.getMinutes() + bookingDuration);
+    try {
+      const response = await api.bookingDemo.checkAvailability(formData);
+      console.log("[DEBUG] response from check availability:", response.data);
 
-    // Check if table is available
-    const tableBookings = existingBookings.filter(b => b.tableId === selectedTable);
-    const available = isTableAvailable(startTime, endTime, tableBookings, bookingRules);
-
-    if (available) {
-      const newBooking: TableBooking = {
-        id: Date.now().toString(),
-        tableId: selectedTable,
-        startTime,
-        endTime,
-        customerName: 'New Customer',
-        partySize: 2
-      };
-      setExistingBookings([...existingBookings, newBooking]);
-      alert('Booking added successfully!');
-    } else {
-      alert('Table is not available for this time slot!');
+      if (response.data) {
+        setAvailableTables(response.data.availableTables);
+        setMessage({ type: 'success', text: 'Available tables found!' });
+      } else {
+        setMessage({ type: 'error', text: response.data.error || 'Failed to check availability' });
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to check availability';
+      setMessage({ type: 'error', text: errorMessage });
+    } finally {
+      setIsCheckingAvailability(false);
     }
   };
 
-  const getTableAvailability = (tableId: string) => {
-    const tableBookings = existingBookings.filter(b => b.tableId === tableId);
-    return tableBookings.map(booking => {
-      const nextAvailable = calculateNextAvailableTime(booking.endTime, bookingRules);
-      return {
-        booking,
-        nextAvailable,
-        marginApplied: formatTimeMargin(bookingRules.bookingTimeMargin)
-      };
-    });
+  const createBooking = async () => {
+    if (!selectedTable) {
+      setMessage({ type: 'error', text: 'Please select a table' });
+      return;
+    }
+
+    setIsCreatingBooking(true);
+    setMessage(null);
+
+    try {
+      const response = await api.bookingDemo.createBooking({
+        ...formData,
+        tableId: selectedTable
+      });
+      
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Booking created successfully!' });
+        // Reset form
+        setFormData({
+          guestCount: 2,
+          date: '',
+          time: '',
+          phoneNumber: '',
+          username: ''
+        });
+        setSelectedTable('');
+        setAvailableTables([]);
+      } else {
+        setMessage({ type: 'error', text: response.data.error || 'Failed to create booking' });
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to create booking';
+      setMessage({ type: 'error', text: errorMessage });
+    } finally {
+      setIsCreatingBooking(false);
+    }
+  };
+
+  const generateTimeOptions = () => {
+    const options = [];
+    const [openHour] = restaurantInfo.openingHours.split(' - ')[0].split(':').map(Number);
+    const [closeHour] = restaurantInfo.openingHours.split(' - ')[1].split(':').map(Number);
+    
+    for (let hour = openHour; hour < closeHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        options.push(timeString);
+      }
+    }
+    return options;
   };
 
   return (
     <Container>
-      <SectionHeader>
-        <h3>Booking Time Margin Demo</h3>
-        <p>See how the booking time margin affects table availability</p>
-      </SectionHeader>
+      <Header>
+        <h2>Book a Table</h2>
+        <p>Make a reservation at {restaurantInfo.name}</p>
+      </Header>
 
-      <DemoSection>
-        <CurrentSettings>
-          <h4>Current Settings</h4>
-          <SettingItem>
-            <Label>Booking Time Margin:</Label>
-            <Value>{formatTimeMargin(bookingRules.bookingTimeMargin)}</Value>
-          </SettingItem>
-          <SettingItem>
-            <Label>Opening Hours:</Label>
-            <Value>{restaurantInfo.openingHours}</Value>
-          </SettingItem>
-        </CurrentSettings>
-
-        <BookingForm>
-          <h4>Add New Booking</h4>
+      <BookingForm>
+        <FormSection>
+          <h3>Booking Details</h3>
+          
           <FormGrid>
             <FormGroup>
-              <Label>Select Table:</Label>
-              <Select value={selectedTable} onChange={(e) => setSelectedTable(e.target.value)}>
-                <option value="">Choose a table</option>
-                {tables.map(table => {
-                  // Get zone info for capacity
-                  const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
-                  const zone = useTableZone().zones.find(z => z._id === zoneId);
-                  const capacity = zone?.seatsPerTable || 0;
-                  
-                  return (
-                    <option key={table._id} value={table._id}>
-                      Table {table.number} ({capacity} seats)
-                    </option>
-                  );
-                })}
+              <Label>Number of Guests *</Label>
+              <Select
+                value={formData.guestCount}
+                onChange={(e) => handleInputChange('guestCount', parseInt(e.target.value))}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                  <option key={num} value={num}>{num} {num === 1 ? 'guest' : 'guests'}</option>
+                ))}
               </Select>
             </FormGroup>
 
             <FormGroup>
-              <Label>Date:</Label>
+              <Label>Date *</Label>
               <Input
                 type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                value={formData.date}
+                onChange={(e) => handleInputChange('date', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
               />
             </FormGroup>
 
             <FormGroup>
-              <Label>Time:</Label>
+              <Label>Time *</Label>
+              <Select
+                value={formData.time}
+                onChange={(e) => handleInputChange('time', e.target.value)}
+              >
+                <option value="">Select time</option>
+                {generateTimeOptions().map(time => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </Select>
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Phone Number *</Label>
               <Input
-                type="time"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
+                type="tel"
+                value={formData.phoneNumber}
+                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                placeholder="+1234567890"
               />
             </FormGroup>
 
             <FormGroup>
-              <Label>Duration (minutes):</Label>
+              <Label>Username *</Label>
               <Input
-                type="number"
-                value={bookingDuration}
-                onChange={(e) => setBookingDuration(parseInt(e.target.value))}
-                min="30"
-                max="240"
-                step="30"
+                type="text"
+                value={formData.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
+                placeholder="Enter your name"
               />
             </FormGroup>
           </FormGrid>
 
-          <AddButton onClick={handleAddBooking}>Add Booking</AddButton>
-        </BookingForm>
-      </DemoSection>
+          <CheckAvailabilityButton 
+            onClick={checkAvailability}
+            disabled={isCheckingAvailability}
+          >
+            {isCheckingAvailability ? 'Checking...' : 'Check Availability'}
+          </CheckAvailabilityButton>
+        </FormSection>
 
-      <BookingsSection>
-        <h4>Bookings & Availability</h4>
-        {tables.map(table => {
-          const availability = getTableAvailability(table._id);
-          // Get zone info for capacity
-          const zoneId = typeof table.zoneId === 'object' ? table.zoneId._id : table.zoneId;
-          const zone = useTableZone().zones.find(z => z._id === zoneId);
-          const capacity = zone?.seatsPerTable || 0;
-          
-          return (
-            <TableCard key={table._id}>
-              <TableHeader>
-                <h5>Table {table.number} ({capacity} seats)</h5>
-              </TableHeader>
-              
-              {availability.length > 0 ? (
-                <BookingList>
-                  {availability.map(({ booking, nextAvailable, marginApplied }) => (
-                    <BookingItem key={booking.id}>
-                      <BookingTime>
-                        <strong>Booking:</strong> {booking.startTime.toLocaleTimeString()} - {booking.endTime.toLocaleTimeString()}
-                      </BookingTime>
-                      <MarginInfo>
-                        <strong>Time Margin Applied:</strong> {marginApplied}
-                      </MarginInfo>
-                      <NextAvailable>
-                        <strong>Next Available:</strong> {nextAvailable.toLocaleTimeString()}
-                      </NextAvailable>
-                    </BookingItem>
-                  ))}
-                </BookingList>
-              ) : (
-                <NoBookings>No bookings for this table</NoBookings>
-              )}
-            </TableCard>
-          );
-        })}
-      </BookingsSection>
+        {message && (
+          <MessageBox type={message.type}>
+            {message.text}
+          </MessageBox>
+        )}
 
-      <InfoBox>
-        <InfoTitle>How It Works</InfoTitle>
-        <InfoText>
-          When a booking ends, the table remains unavailable for the specified time margin. 
-          This prevents overlapping reservations and allows time for cleanup and preparation.
-        </InfoText>
-        <InfoExample>
-          <strong>Example:</strong> If a table is booked until 8:00 PM with a {formatTimeMargin(bookingRules.bookingTimeMargin)} margin, 
-          the next available booking slot would be {calculateNextAvailableTime(new Date('2024-01-15T20:00:00'), bookingRules).toLocaleTimeString()}.
-        </InfoExample>
-      </InfoBox>
+        {availableTables.length > 0 && (
+          <TableSelection>
+            <h3>Available Tables</h3>
+            <TableGrid>
+              {availableTables.map(table => (
+                <TableCard 
+                  key={table.tableId}
+                  selected={selectedTable === table.tableId}
+                  onClick={() => setSelectedTable(table.tableId)}
+                >
+                  <TableNumber>Table {table.tableNumber}</TableNumber>
+                  <TableInfo>
+                    <span>Capacity: {table.capacity} guests</span>
+                    <span>Zone: {table.zoneName}</span>
+                  </TableInfo>
+                </TableCard>
+              ))}
+            </TableGrid>
+
+            <CreateBookingButton 
+              onClick={createBooking}
+              disabled={isCreatingBooking || !selectedTable}
+            >
+              {isCreatingBooking ? 'Creating...' : 'Confirm Booking'}
+            </CreateBookingButton>
+          </TableSelection>
+        )}
+      </BookingForm>
+
+      <InfoSection>
+        <h3>Restaurant Information</h3>
+        <InfoGrid>
+          <InfoItem>
+            <InfoLabel>Opening Hours:</InfoLabel>
+            <InfoValue>{restaurantInfo.openingHours}</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Booking Time Margin:</InfoLabel>
+            <InfoValue>{bookingRules.bookingTimeMargin} minutes</InfoValue>
+          </InfoItem>
+        </InfoGrid>
+      </InfoSection>
     </Container>
   );
 };
 
 const Container = styled.div`
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
   background: white;
   border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 `;
 
-const SectionHeader = styled.div`
+const Header = styled.div`
+  text-align: center;
   margin-bottom: 2rem;
   
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.5rem;
   }
   
   p {
     color: #64748b;
-    font-size: 0.875rem;
+    font-size: 1.1rem;
   }
-`;
-
-const DemoSection = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const CurrentSettings = styled.div`
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1.5rem;
-  
-  h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 1rem;
-  }
-`;
-
-const SettingItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const Label = styled.span`
-  font-weight: 500;
-  color: #374151;
-  font-size: 0.875rem;
-`;
-
-const Value = styled.span`
-  color: #06b6d4;
-  font-weight: 600;
-  font-size: 0.875rem;
 `;
 
 const BookingForm = styled.div`
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const FormSection = styled.div`
+  margin-bottom: 2rem;
   
-  h4 {
-    font-size: 1rem;
+  h3 {
+    font-size: 1.25rem;
     font-weight: 600;
     color: #1e293b;
     margin-bottom: 1rem;
@@ -284,9 +292,9 @@ const BookingForm = styled.div`
 
 const FormGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 `;
 
 const FormGroup = styled.div`
@@ -295,52 +303,156 @@ const FormGroup = styled.div`
   gap: 0.5rem;
 `;
 
-const Input = styled.input`
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+const Label = styled.label`
+  font-weight: 500;
+  color: #374151;
   font-size: 0.875rem;
+`;
+
+const Input = styled.input`
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
   
   &:focus {
     outline: none;
     border-color: #06b6d4;
-    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
   }
 `;
 
 const Select = styled.select`
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  border-radius: 8px;
+  font-size: 1rem;
   background: white;
+  transition: border-color 0.2s;
   
   &:focus {
     outline: none;
     border-color: #06b6d4;
-    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
   }
 `;
 
-const AddButton = styled.button`
+const CheckAvailabilityButton = styled.button`
   background: #06b6d4;
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  font-weight: 500;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
+  width: 100%;
   
-  &:hover {
+  &:hover:not(:disabled) {
     background: #0891b2;
+  }
+  
+  &:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
   }
 `;
 
-const BookingsSection = styled.div`
-  margin-bottom: 2rem;
+const MessageBox = styled.div<{ type: 'success' | 'error' }>`
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 500;
   
-  h4 {
+  ${props => props.type === 'success' ? `
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  ` : `
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  `}
+`;
+
+const TableSelection = styled.div`
+  margin-top: 2rem;
+  
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1rem;
+  }
+`;
+
+const TableGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const TableCard = styled.div<{ selected: boolean }>`
+  border: 2px solid ${props => props.selected ? '#06b6d4' : '#e2e8f0'};
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: ${props => props.selected ? '#f0f9ff' : 'white'};
+  
+  &:hover {
+    border-color: #06b6d4;
+    background: #f0f9ff;
+  }
+`;
+
+const TableNumber = styled.div`
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+`;
+
+const TableInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #64748b;
+`;
+
+const CreateBookingButton = styled.button`
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+  
+  &:hover:not(:disabled) {
+    background: #047857;
+  }
+  
+  &:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+  }
+`;
+
+const InfoSection = styled.div`
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  
+  h3 {
     font-size: 1.125rem;
     font-weight: 600;
     color: #1e293b;
@@ -348,95 +460,28 @@ const BookingsSection = styled.div`
   }
 `;
 
-const TableCard = styled.div`
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  overflow: hidden;
+const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
 `;
 
-const TableHeader = styled.div`
-  background: #f1f5f9;
-  padding: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  
-  h5 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-  }
+const InfoItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;
 
-const BookingList = styled.div`
-  padding: 1rem;
-`;
-
-const BookingItem = styled.div`
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const BookingTime = styled.div`
-  color: #1e293b;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-`;
-
-const MarginInfo = styled.div`
-  color: #06b6d4;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-`;
-
-const NextAvailable = styled.div`
-  color: #059669;
-  font-size: 0.875rem;
+const InfoLabel = styled.span`
   font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
 `;
 
-const NoBookings = styled.div`
-  padding: 1rem;
-  color: #6b7280;
-  font-style: italic;
-  text-align: center;
-`;
-
-const InfoBox = styled.div`
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  padding: 1.5rem;
-`;
-
-const InfoTitle = styled.h4`
-  font-size: 1rem;
+const InfoValue = styled.span`
+  color: #06b6d4;
   font-weight: 600;
-  color: #0369a1;
-  margin-bottom: 0.75rem;
-`;
-
-const InfoText = styled.p`
-  color: #0369a1;
   font-size: 0.875rem;
-  line-height: 1.5;
-  margin-bottom: 0.75rem;
-`;
-
-const InfoExample = styled.div`
-  color: #0369a1;
-  font-size: 0.875rem;
-  background: rgba(186, 230, 253, 0.3);
-  padding: 0.75rem;
-  border-radius: 6px;
-  border-left: 3px solid #0ea5e9;
 `;
 
 export default BookingDemo;

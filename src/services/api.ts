@@ -262,6 +262,32 @@ export const notificationsAPI = {
   }
 };
 
+// Booking Demo API
+export const bookingDemoAPI = {
+  checkAvailability: async (data: { date: string; time: string; guestCount: number; phoneNumber: string; username: string }) => {
+    return apiRequest('/booking-demo/check-availability', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  createBooking: async (data: { date: string; time: string; guestCount: number; phoneNumber: string; username: string; tableId: string }) => {
+    return apiRequest('/booking-demo/create', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  getHistory: async (params?: { phoneNumber?: string; date?: string }) => {
+    const queryParams = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return apiRequest(`/booking-demo/history${queryParams}`);
+  },
+
+  getAvailability: async (date: string, time: string) => {
+    return apiRequest(`/booking-demo/availability/${date}?time=${time}`);
+  }
+};
+
 export default {
   auth: authAPI,
   tables: tablesAPI,
@@ -269,5 +295,6 @@ export default {
   bookings: bookingsAPI,
   statistics: statisticsAPI,
   restaurant: restaurantAPI,
-  notifications: notificationsAPI
+  notifications: notificationsAPI,
+  bookingDemo: bookingDemoAPI
 };
