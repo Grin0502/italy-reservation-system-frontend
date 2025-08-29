@@ -17,6 +17,9 @@ interface AvailableTable {
   tableNumber: number;
   capacity: number;
   zoneName: string;
+  efficiency: number;
+  isSuitable: boolean;
+  suitabilityNote: string;
 }
 
 const BookingDemo: React.FC = () => {
@@ -73,6 +76,17 @@ const BookingDemo: React.FC = () => {
     if (!selectedTable) {
       setMessage({ type: 'error', text: 'Please select a table' });
       return;
+    }
+
+    // Check if selected table is suitable for the guest count
+    const selectedTableData = availableTables.find(table => table.tableId === selectedTable);
+    if (selectedTableData && !selectedTableData.isSuitable) {
+      const confirmed = window.confirm(
+        `Warning: Table ${selectedTableData.tableNumber} can only accommodate ${selectedTableData.capacity} guests, but you have ${formData.guestCount} guests. Do you want to proceed anyway?`
+      );
+      if (!confirmed) {
+        return;
+      }
     }
 
     setIsCreatingBooking(true);
@@ -212,11 +226,18 @@ const BookingDemo: React.FC = () => {
                   key={table.tableId}
                   selected={selectedTable === table.tableId}
                   onClick={() => setSelectedTable(table.tableId)}
+                  suitable={table.isSuitable}
                 >
                   <TableNumber>Table {table.tableNumber}</TableNumber>
                   <TableInfo>
                     <span>Capacity: {table.capacity} guests</span>
                     <span>Zone: {table.zoneName}</span>
+                    <SuitabilityBadge suitable={table.isSuitable}>
+                      {table.isSuitable ? '✓ Suitable' : '⚠ Too Small'}
+                    </SuitabilityBadge>
+                    {!table.isSuitable && (
+                      <SuitabilityNote>{table.suitabilityNote}</SuitabilityNote>
+                    )}
                   </TableInfo>
                 </TableCard>
               ))}
@@ -395,17 +416,26 @@ const TableGrid = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const TableCard = styled.div<{ selected: boolean }>`
-  border: 2px solid ${props => props.selected ? '#06b6d4' : '#e2e8f0'};
+const TableCard = styled.div<{ selected: boolean; suitable: boolean }>`
+  border: 2px solid ${props => {
+    if (props.selected) return '#06b6d4';
+    if (!props.suitable) return '#ef4444';
+    return '#e2e8f0';
+  }};
   border-radius: 8px;
   padding: 1rem;
   cursor: pointer;
   transition: all 0.2s;
-  background: ${props => props.selected ? '#f0f9ff' : 'white'};
+  background: ${props => {
+    if (props.selected) return '#f0f9ff';
+    if (!props.suitable) return '#fef2f2';
+    return 'white';
+  }};
+  opacity: ${props => props.suitable ? 1 : 0.7};
   
   &:hover {
-    border-color: #06b6d4;
-    background: #f0f9ff;
+    border-color: ${props => props.suitable ? '#06b6d4' : '#ef4444'};
+    background: ${props => props.suitable ? '#f0f9ff' : '#fef2f2'};
   }
 `;
 
@@ -422,6 +452,24 @@ const TableInfo = styled.div`
   gap: 0.25rem;
   font-size: 0.875rem;
   color: #64748b;
+`;
+
+const SuitabilityBadge = styled.span<{ suitable: boolean }>`
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: ${props => props.suitable ? '#dcfce7' : '#fef2f2'};
+  color: ${props => props.suitable ? '#166534' : '#dc2626'};
+  border: 1px solid ${props => props.suitable ? '#bbf7d0' : '#fecaca'};
+`;
+
+const SuitabilityNote = styled.span`
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-style: italic;
 `;
 
 const CreateBookingButton = styled.button`
