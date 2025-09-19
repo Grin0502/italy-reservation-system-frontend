@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useRestaurant } from '../contexts/RestaurantContext';
-import { useTableZone } from '../contexts/TableZoneContext';
 import api from '../services/api';
 
 interface BookingFormData {
@@ -24,7 +23,6 @@ interface AvailableTable {
 
 const BookingDemo: React.FC = () => {
   const { bookingRules, restaurantInfo } = useRestaurant();
-  const { tables } = useTableZone();
   
   const [formData, setFormData] = useState<BookingFormData>({
     guestCount: 2,
