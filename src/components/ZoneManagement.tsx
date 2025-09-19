@@ -377,6 +377,11 @@ const Container = styled.div`
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -390,6 +395,16 @@ const Header = styled.div`
     font-weight: 600;
     color: #1e293b;
     margin: 0;
+    
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
 `;
 
@@ -406,6 +421,11 @@ const AddButton = styled.button`
   &:hover {
     background: #0891b2;
   }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 0.75rem;
+  }
 `;
 
 const FormOverlay = styled.div`
@@ -419,6 +439,10 @@ const FormOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const FormCard = styled.div`
@@ -428,6 +452,12 @@ const FormCard = styled.div`
   width: 90%;
   max-width: 500px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    width: 100%;
+    max-width: none;
+  }
 `;
 
 const FormHeader = styled.div`
@@ -440,6 +470,10 @@ const FormHeader = styled.div`
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
   }
 `;
 
@@ -571,6 +605,11 @@ const ZoneGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1.5rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 `;
 
 const ZoneCard = styled.div`
@@ -578,6 +617,11 @@ const ZoneCard = styled.div`
   border-radius: 12px;
   padding: 1.5rem;
   background: #f9fafb;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 8px;
+  }
 `;
 
 const ZoneHeader = styled.div`

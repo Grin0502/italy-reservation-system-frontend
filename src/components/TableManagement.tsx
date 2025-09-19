@@ -329,6 +329,11 @@ const Container = styled.div`
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -342,6 +347,16 @@ const Header = styled.div`
     font-weight: 600;
     color: #1e293b;
     margin: 0;
+    
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
 `;
 
@@ -358,6 +373,11 @@ const AddButton = styled.button`
   &:hover {
     background: #0891b2;
   }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 0.75rem;
+  }
 `;
 
 const FormOverlay = styled.div`
@@ -371,6 +391,10 @@ const FormOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const FormCard = styled.div`
@@ -380,6 +404,12 @@ const FormCard = styled.div`
   width: 90%;
   max-width: 500px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    width: 100%;
+    max-width: none;
+  }
 `;
 
 const FormHeader = styled.div`
@@ -392,6 +422,10 @@ const FormHeader = styled.div`
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
   }
 `;
 
@@ -499,6 +533,11 @@ const TableGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
 `;
 
 const TableCard = styled.div`
@@ -506,6 +545,10 @@ const TableCard = styled.div`
   border-radius: 8px;
   padding: 1rem;
   background: #f9fafb;
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+  }
 `;
 
 const TableHeader = styled.div`
@@ -519,6 +562,10 @@ const TableNumber = styled.div`
   font-weight: 600;
   font-size: 1.125rem;
   color: #1e293b;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const TableInfo = styled.div`
@@ -534,11 +581,20 @@ const InfoItem = styled.div`
   span {
     color: #6b7280;
   }
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const TableActions = styled.div`
   display: flex;
   gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
 `;
 
 const MoveButton = styled.button`
@@ -553,6 +609,11 @@ const MoveButton = styled.button`
   
   &:hover {
     background: #d97706;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    font-size: 0.8rem;
   }
 `;
 
@@ -569,6 +630,11 @@ const EditButton = styled.button`
   &:hover {
     background: #2563eb;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
 `;
 
 const DeleteButton = styled.button`
@@ -584,6 +650,11 @@ const DeleteButton = styled.button`
   &:hover {
     background: #dc2626;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
 `;
 
 const UnassignedSection = styled.div`
@@ -592,6 +663,10 @@ const UnassignedSection = styled.div`
   background: #f0f9eb;
   border: 1px solid #e1f3d8;
   border-radius: 8px;
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+  }
 `;
 
 const UnassignedHeader = styled.div`
@@ -605,11 +680,19 @@ const UnassignedHeader = styled.div`
     font-size: 1rem;
     font-weight: 600;
     color: #22c55e;
+    
+    @media (max-width: 768px) {
+      font-size: 0.9rem;
+    }
   }
   
   span {
     font-size: 0.875rem;
     color: #4b5563;
+    
+    @media (max-width: 768px) {
+      font-size: 0.8rem;
+    }
   }
 `;
 
@@ -617,6 +700,11 @@ const UnassignedGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0.75rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
 `;
 
 const UnassignedTableCard = styled.div`
@@ -627,11 +715,21 @@ const UnassignedTableCard = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
 `;
 
 const UnassignedAssignActions = styled.div`
   display: flex;
   gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const UnassignedAssignSelect = styled.select`
@@ -646,6 +744,11 @@ const UnassignedAssignSelect = styled.select`
     outline: none;
     border-color: #06b6d4;
     box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 0.75rem;
   }
 `;
 

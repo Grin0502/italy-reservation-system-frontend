@@ -84,6 +84,10 @@ const SettingsPage = () => {
 const SettingsContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    padding: 0;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -94,11 +98,19 @@ const PageHeader = styled.div`
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.5rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
   }
   
   p {
     color: #64748b;
     font-size: 1.1rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
   }
 `;
 
@@ -112,6 +124,10 @@ const SettingsContent = styled.div`
 const TabsContainer = styled.div`
   display: flex;
   border-bottom: 1px solid #e2e8f0;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 const TabButton = styled.button<{ isActive: boolean }>`
@@ -128,6 +144,11 @@ const TabButton = styled.button<{ isActive: boolean }>`
   
   &:hover {
     background: ${props => props.isActive ? '#0891b2' : '#f8fafc'};
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -157,6 +178,13 @@ const SupportButton = styled.button`
     background: #0891b2;
     transform: translateY(-2px);
   }
+  
+  @media (max-width: 768px) {
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
 `;
 
 const AccessDenied = styled.div`
@@ -173,6 +201,10 @@ const AccessDenied = styled.div`
   
   p {
     color: #64748b;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
   }
 `;
 

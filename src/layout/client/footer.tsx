@@ -21,9 +21,18 @@ const Container = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
+    
+    @media (max-width: 768px) {
+        padding: 1rem;
+    }
 `;
 const CopyrightText = styled.div`
     font-size: 0.875rem;
     color: #64748b;
+    text-align: center;
+    
+    @media (max-width: 480px) {
+        font-size: 0.8rem;
+    }
 `;
 export default Footer;

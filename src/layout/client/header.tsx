@@ -1,7 +1,12 @@
 import styled from "styled-components";
+import { AiOutlineMenu } from "react-icons/ai";
 import { useAuth } from "../../contexts/AuthContext";
 
-const Header = () => {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+const Header = ({ onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
@@ -12,6 +17,9 @@ const Header = () => {
     <HeaderContainer>
       <HeaderContent>
         <HeaderLeft>
+          <MenuButton onClick={onMenuClick}>
+            <AiOutlineMenu />
+          </MenuButton>
           <HeaderTitle>Restaurant Manager</HeaderTitle>
         </HeaderLeft>
         
@@ -34,6 +42,10 @@ const HeaderContainer = styled.header`
   border-bottom: 1px solid #e5e7eb;
   padding: 1rem 2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const HeaderContent = styled.div`
@@ -47,6 +59,28 @@ const HeaderContent = styled.div`
 const HeaderLeft = styled.div`
   display: flex;
   align-items: center;
+  gap: 1rem;
+`;
+
+const MenuButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #1e293b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #f1f5f9;
+  }
+  
+  @media (min-width: 769px) {
+    display: none;
+  }
 `;
 
 const HeaderTitle = styled.h1`
@@ -54,16 +88,28 @@ const HeaderTitle = styled.h1`
   font-weight: 700;
   color: #1e293b;
   margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const HeaderRight = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+  
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
 `;
 
 const UserInfo = styled.div`
   text-align: right;
+  
+  @media (max-width: 480px) {
+    display: none;
+  }
 `;
 
 const UserName = styled.div`
@@ -91,6 +137,11 @@ const LogoutButton = styled.button`
   
   &:hover {
     background: #dc2626;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 `;
 

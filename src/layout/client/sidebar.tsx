@@ -6,11 +6,17 @@ import {
   AiOutlineBarChart,
   AiOutlineSetting,
   AiOutlineClockCircle,
-  AiOutlineAppstore
+  AiOutlineAppstore,
+  AiOutlineClose
 } from "react-icons/ai";
 import { useUser } from "../../contexts/UserContext";
 
-const Sidebar = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { hasPermission } = useUser();
 
@@ -30,10 +36,13 @@ const Sidebar = () => {
   });
 
   return (
-    <SidebarContainer>
+    <SidebarContainer isOpen={isOpen}>
       <SidebarContent>
         <LogoSection>
           <Logo>Restaurant Manager</Logo>
+          <CloseButton onClick={onClose}>
+            <AiOutlineClose />
+          </CloseButton>
         </LogoSection>
         
         <NavSection>
@@ -46,6 +55,7 @@ const Sidebar = () => {
                 key={item.path} 
                 to={item.path}
                 isActive={isActive}
+                onClick={onClose}
               >
                 <NavIcon>
                   <IconComponent />
@@ -60,7 +70,7 @@ const Sidebar = () => {
   );
 };
 
-const SidebarContainer = styled.div`
+const SidebarContainer = styled.div<{ isOpen: boolean }>`
   width: 250px;
   height: 100vh;
   background: #1e293b;
@@ -69,6 +79,12 @@ const SidebarContainer = styled.div`
   top: 0;
   z-index: 40;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  transform: ${props => props.isOpen ? 'translateX(0)' : 'translateX(-100%)'};
+  transition: transform 0.3s ease;
+  
+  @media (min-width: 769px) {
+    transform: translateX(0);
+  }
 `;
 
 const SidebarContent = styled.div`
@@ -80,6 +96,9 @@ const SidebarContent = styled.div`
 const LogoSection = styled.div`
   padding: 1.5rem;
   border-bottom: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const Logo = styled.div`
@@ -87,6 +106,28 @@ const Logo = styled.div`
   font-size: 1.25rem;
   font-weight: 700;
   text-align: center;
+  flex: 1;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #334155;
+  }
+  
+  @media (min-width: 769px) {
+    display: none;
+  }
 `;
 
 const NavSection = styled.nav`

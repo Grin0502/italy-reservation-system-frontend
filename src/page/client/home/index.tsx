@@ -157,6 +157,10 @@ const HomePage = () => {
 const HomeContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    padding: 0;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -167,11 +171,19 @@ const PageHeader = styled.div`
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.5rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
   }
   
   p {
     color: #64748b;
     font-size: 1.1rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
   }
 `;
 
@@ -180,6 +192,11 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 `;
 
 const StatCard = styled.div`
@@ -195,6 +212,11 @@ const StatCard = styled.div`
   &:hover {
     transform: translateY(-2px);
   }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
 `;
 
 const StatIcon = styled.div<{ color: string }>`
@@ -207,6 +229,12 @@ const StatIcon = styled.div<{ color: string }>`
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
+  
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
 `;
 
 const StatContent = styled.div``;
@@ -216,12 +244,20 @@ const StatValue = styled.div`
   font-weight: 700;
   color: #1e293b;
   line-height: 1;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const StatLabel = styled.div`
   color: #64748b;
   font-size: 0.875rem;
   margin-top: 0.25rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const ContentGrid = styled.div`
@@ -240,6 +276,10 @@ const SectionCard = styled.div<{ fullWidth?: boolean }>`
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   grid-column: ${props => props.fullWidth ? '1 / -1' : 'auto'};
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const SectionHeader = styled.div`
@@ -252,6 +292,14 @@ const SectionHeader = styled.div`
     font-size: 1.25rem;
     font-weight: 600;
     color: #1e293b;
+    
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
   }
 `;
 
