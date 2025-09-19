@@ -10,9 +10,6 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell
 } from 'recharts';
 import { useTableZone } from '../contexts/TableZoneContext';
 import { useUser } from '../contexts/UserContext';
